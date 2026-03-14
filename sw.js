@@ -1,5 +1,5 @@
 const CACHE = 'flashdeck-v1';
-const ASSETS = ['./index.html', './style.css', './script.js', './manifest.json', './icon.svg'];
+const ASSETS = ['./index.html', './style.css', './script.js', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
