@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashDeck</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4255ff">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a class="logo" href="#">
+                <div class="logo-mark">F</div>
+                <span class="logo-text">FlashDeck</span>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button id="study-mode-btn" class="nav-item active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Flashcards
+            </button>
+            <button id="review-mode-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Learn <span class="nav-badge" id="due-count">0</span>
+            </button>
+            <button id="match-mode-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                Match
+            </button>
+            <button id="write-mode-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Write
+            </button>
+            <button id="survival-mode-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Survival
+            </button>
+            <button id="mc-mode-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>
+                Multiple Choice
+            </button>
+        </nav>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-header">
+                <span>Your decks</span>
+                <button id="new-deck-btn" class="sidebar-add-btn" title="New deck">+</button>
+            </div>
+            <input type="text" id="deck-search" class="deck-search" placeholder="Search decks...">
+            <div id="deck-list" class="deck-list"></div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <button id="manage-mode-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Manage Cards
+            </button>
+            <button id="import-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Import
+            </button>
+            <button id="export-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Export
+            </button>
+        </div>
+    </aside>
+
+    <!-- Mobile top bar -->
+    <div class="mobile-bar">
+        <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Menu">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="mobile-title" id="mobile-deck-name">FlashDeck</span>
+        <button id="theme-toggle-btn" class="theme-btn" title="Toggle theme">
+            <span class="theme-icon"></span>
+        </button>
+    </div>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Main -->
+    <main class="main">
+        <!-- Deck Header -->
+        <div class="deck-header" id="deck-header">
+            <div class="deck-header-top">
+                <span class="deck-author" id="deck-author"></span>
+            </div>
+            <h1 class="deck-title" id="deck-title">No Deck Selected</h1>
+        </div>
+
+        <!-- Mode Grid -->
+        <div class="mode-grid" id="mode-grid">
+            <button class="mode-card" data-mode="study">
+                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Flashcards
+            </button>
+            <button class="mode-card" data-mode="review">
+                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Learn
+            </button>
+            <button class="mode-card" data-mode="write">
+                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Write
+            </button>
+            <button class="mode-card" data-mode="match">
+                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                Match
+            </button>
+            <button class="mode-card" data-mode="survival">
+                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Survival
+            </button>
+            <button class="mode-card" data-mode="mc">
+                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>
+                Multiple Choice
+            </button>
+        </div>
+
+        <!-- Study View -->
+        <div id="study-view" class="view active">
+            <div class="flashcard-wrapper">
+                <div class="card-container">
+                    <div id="flashcard" class="flashcard">
+                        <div class="card-front">
+                            <div class="card-top-bar">
+                                <span class="card-hint">Click to flip</span>
+                                <button id="tts-play-btn" class="card-icon-btn" title="Listen">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                                </button>
+                            </div>
+                            <div id="question-image" class="card-image"></div>
+                            <div id="question-text" class="card-text">Create a deck to get started</div>
+                        </div>
+                        <div class="card-back">
+                            <div class="card-top-bar">
+                                <span class="card-hint">Click to flip</span>
+                                <select id="tts-speed" class="speed-select">
+                                    <option value="0.5">0.5x</option>
+                                    <option value="0.75">0.75x</option>
+                                    <option value="1" selected>1x</option>
+                                    <option value="1.25">1.25x</option>
+                                    <option value="1.5">1.5x</option>
+                                </select>
+                            </div>
+                            <div id="answer-image" class="card-image"></div>
+                            <div id="answer-text" class="card-text"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-controls">
+                <button id="prev-btn" class="control-btn" aria-label="Previous">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span class="card-counter" id="progress-text">0 / 0</span>
+                <button id="next-btn" class="control-btn" aria-label="Next">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <button id="shuffle-btn" class="control-btn" title="Shuffle">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Review View -->
+        <div id="review-view" class="view">
+            <div class="review-header">
+                <span class="review-remaining" id="cards-remaining">0 cards remaining</span>
+                <span class="review-hint">Space = flip &middot; 1-4 to rate</span>
+            </div>
+
+            <div class="flashcard-wrapper">
+                <div class="card-container">
+                    <div id="review-flashcard" class="flashcard">
+                        <div class="card-front">
+                            <div id="review-question-image" class="card-image"></div>
+                            <div id="review-question-text" class="card-text">No cards due!</div>
+                        </div>
+                        <div class="card-back">
+                            <div id="review-answer-image" class="card-image"></div>
+                            <div id="review-answer-text" class="card-text"></div>
+                            <div class="rating-row">
+                                <button id="again-btn" class="rate-btn rate-again"><span>Again</span><small id="again-time">1m</small></button>
+                                <button id="hard-btn" class="rate-btn rate-hard"><span>Hard</span><small id="hard-time">10m</small></button>
+                                <button id="good-btn" class="rate-btn rate-good"><span>Good</span><small id="good-time">1d</small></button>
+                                <button id="easy-btn" class="rate-btn rate-easy"><span>Easy</span><small id="easy-time">4d</small></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="show-answer-wrap">
+                <button id="show-answer-btn" class="btn btn-primary btn-lg">Show Answer</button>
+            </div>
+        </div>
+
+        <!-- Match View -->
+        <div id="match-view" class="view">
+            <div class="game-bar">
+                <div class="game-chips">
+                    <span class="game-chip">Time <strong id="match-timer">0:00</strong></span>
+                    <span class="game-chip">Score <strong id="match-score">0</strong></span>
+                    <span class="game-chip gold">Best <strong id="match-best">--</strong></span>
+                </div>
+                <button id="match-start-btn" class="btn btn-primary">Start Match</button>
+            </div>
+            <div id="match-game" class="match-grid"></div>
+            <div id="match-result" class="game-result"></div>
+        </div>
+
+        <!-- Write View -->
+        <div id="write-view" class="view">
+            <div class="game-bar">
+                <div class="game-chips">
+                    <span class="game-chip">Progress <strong id="write-progress">0/0</strong></span>
+                    <span class="game-chip">Score <strong id="write-score">0</strong></span>
+                </div>
+                <button id="write-start-btn" class="btn btn-primary">Start Write</button>
+            </div>
+            <div id="write-game" class="write-area">
+                <div class="write-prompt-card" id="write-question">Click Start to begin</div>
+                <input type="text" id="write-answer-input" class="write-input" placeholder="Type your answer..." disabled>
+                <button id="write-check-btn" class="btn btn-primary" disabled>Check</button>
+                <div id="write-feedback" class="write-feedback"></div>
+            </div>
+            <div id="write-result" class="game-result"></div>
+        </div>
+
+        <!-- Survival View -->
+        <div id="survival-view" class="view">
+            <div class="game-bar">
+                <div class="game-chips">
+                    <span class="game-chip">Lives <strong id="survival-lives">&#10084;&#10084;&#10084;</strong></span>
+                    <span class="game-chip">Score <strong id="survival-score">0</strong></span>
+                    <span class="game-chip gold">Best <strong id="survival-best">--</strong></span>
+                </div>
+                <button id="survival-start-btn" class="btn btn-primary">Start Survival</button>
+            </div>
+            <div id="survival-game" class="survival-area">
+                <div class="survival-prompt-card" id="survival-question">Click Start to begin</div>
+                <div class="survival-grid" id="survival-options"></div>
+            </div>
+            <div id="survival-result" class="game-result"></div>
+        </div>
+
+        <!-- Multiple Choice View -->
+        <div id="mc-view" class="view">
+            <div class="game-bar">
+                <div class="game-chips">
+                    <span class="game-chip">Progress <strong id="mc-progress">0/0</strong></span>
+                    <span class="game-chip">Score <strong id="mc-score">0</strong></span>
+                </div>
+                <button id="mc-start-btn" class="btn btn-primary">Start Quiz</button>
+            </div>
+            <div id="mc-game" class="mc-area">
+                <div class="mc-prompt-card" id="mc-question">Click Start to begin</div>
+                <div class="mc-options" id="mc-options"></div>
+            </div>
+            <div id="mc-result" class="game-result"></div>
+        </div>
+
+        <!-- Manage View -->
+        <div id="manage-view" class="view">
+            <div class="manage-panel">
+                <h3 id="form-title">Add New Card</h3>
+                <div class="field">
+                    <label>Front</label>
+                    <textarea id="question-input" rows="2" placeholder="Term or question"></textarea>
+                </div>
+                <div class="field">
+                    <label>Back</label>
+                    <textarea id="answer-input" rows="2" placeholder="Definition or answer"></textarea>
+                </div>
+                <div class="field">
+                    <label>Image (optional)</label>
+                    <div class="img-row">
+                        <input type="file" id="image-input" accept="image/*">
+                        <button type="button" id="search-image-btn" class="btn btn-outline btn-sm">Search Image</button>
+                    </div>
+                    <div id="image-preview" class="image-preview"></div>
+                </div>
+                <div class="btn-row">
+                    <button id="save-card-btn" class="btn btn-primary">Add Card</button>
+                    <button id="cancel-edit-btn" class="btn btn-outline" style="display:none">Cancel</button>
+                </div>
+            </div>
+            <div class="manage-panel">
+                <h3>Cards in Deck</h3>
+                <div id="cards-container"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: New Deck -->
+    <div id="deck-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Create New Deck</h3>
+            <input type="text" id="deck-name-input" class="modal-input" placeholder="Deck name...">
+            <div class="btn-row">
+                <button id="create-deck-btn" class="btn btn-primary">Create</button>
+                <button id="cancel-deck-btn" class="btn btn-outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Import -->
+    <div id="import-modal" class="modal-overlay">
+        <div class="modal modal-wide">
+            <h3>Import Flashcards</h3>
+            <div class="info-callout">
+                <strong>Format:</strong> FRONT&nbsp;&nbsp;&nbsp;&nbsp;BACK (4 spaces)&emsp;|&emsp;One card per line
+            </div>
+            <textarea id="import-input" class="modal-input mono" rows="7" placeholder="What is HTML    HyperText Markup Language"></textarea>
+            <div id="import-errors" class="import-errors"></div>
+            <div class="btn-row">
+                <button id="import-cards-btn" class="btn btn-primary">Import</button>
+                <button id="cancel-import-btn" class="btn btn-outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Image Search -->
+    <div id="image-search-modal" class="modal-overlay">
+        <div class="modal modal-wide">
+            <h3>Search Images</h3>
+            <div class="btn-row" style="margin-bottom:12px">
+                <input type="text" id="image-search-input" class="modal-input" placeholder="Search..." style="margin:0;flex:1">
+                <button id="image-search-submit-btn" class="btn btn-primary">Search</button>
+            </div>
+            <div id="image-search-results" class="img-results"></div>
+            <div class="btn-row">
+                <button id="cancel-image-search-btn" class="btn btn-outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+</body>
+</html>
