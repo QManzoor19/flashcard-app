@@ -19,49 +19,36 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <a class="logo" href="#">
+            <a class="logo" href="#" onclick="switchPage('home');return false;">
                 <div class="logo-mark">F</div>
                 <span class="logo-text">FlashDeck</span>
             </a>
         </div>
 
         <nav class="sidebar-nav">
-            <button id="study-mode-btn" class="nav-item active">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                Flashcards
+            <button id="page-home-btn" class="nav-item active">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Home
             </button>
-            <button id="review-mode-btn" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Learn <span class="nav-badge" id="due-count">0</span>
+            <button id="page-folders-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Folders
             </button>
-            <button id="match-mode-btn" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                Match
+            <button id="page-decks-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/></svg>
+                Decks
             </button>
-            <button id="write-mode-btn" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                Write
-            </button>
-            <button id="survival-mode-btn" class="nav-item">
+            <button id="page-exercises-btn" class="nav-item">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                Survival
+                Exercises
             </button>
-            <button id="mc-mode-btn" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>
-                Multiple Choice
+            <button id="global-search-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Search
             </button>
         </nav>
 
         <div class="sidebar-divider"></div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-section-header">
-                <span>Your decks</span>
-                <button id="new-deck-btn" class="sidebar-add-btn" title="New deck">+</button>
-            </div>
-            <input type="text" id="deck-search" class="deck-search" placeholder="Search decks...">
-            <div id="deck-list" class="deck-list"></div>
-        </div>
 
         <div class="sidebar-bottom">
             <button id="manage-mode-btn" class="nav-item">
@@ -85,6 +72,9 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
         <span class="mobile-title" id="mobile-deck-name">FlashDeck</span>
+        <button id="mobile-search-btn" class="theme-btn" title="Search" style="margin-right:4px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
         <button id="theme-toggle-btn" class="theme-btn" title="Toggle theme">
             <span class="theme-icon"></span>
         </button>
@@ -93,53 +83,145 @@
 
     <!-- Main -->
     <main class="main">
-        <!-- Deck Header -->
-        <div class="deck-header" id="deck-header">
+        <!-- Back button -->
+        <button id="back-btn" class="back-btn" style="display:none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            <span id="back-btn-label">Back</span>
+        </button>
+
+        <!-- Deck Header (shown during exercises) -->
+        <div class="deck-header" id="deck-header" style="display:none">
             <div class="deck-header-top">
                 <span class="deck-author" id="deck-author"></span>
             </div>
             <h1 class="deck-title" id="deck-title">No Deck Selected</h1>
         </div>
 
-        <!-- Mode Grid -->
-        <div class="mode-grid" id="mode-grid">
-            <button class="mode-card" data-mode="study">
-                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                Flashcards
-            </button>
-            <button class="mode-card" data-mode="review">
-                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Learn
-            </button>
-            <button class="mode-card" data-mode="write">
-                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                Write
-            </button>
-            <button class="mode-card" data-mode="match">
-                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                Match
-            </button>
-            <button class="mode-card" data-mode="survival">
-                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                Survival
-            </button>
-            <button class="mode-card" data-mode="mc">
-                <svg class="mode-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>
-                Multiple Choice
-            </button>
+        <!-- ===== Home Page ===== -->
+        <div id="home-page" class="page active">
+            <div id="home-content"></div>
         </div>
+
+        <!-- ===== Folders Page ===== -->
+        <div id="folders-page" class="page">
+            <div class="page-header">
+                <h1 class="page-title">Folders</h1>
+                <button id="new-folder-btn" class="btn btn-primary">New Folder</button>
+            </div>
+            <div id="folders-grid" class="card-grid"></div>
+        </div>
+
+        <!-- ===== Decks Page ===== -->
+        <div id="decks-page" class="page">
+            <div class="page-header">
+                <h1 class="page-title" id="decks-page-title">All Decks</h1>
+                <div class="page-header-actions">
+                    <input type="text" id="deck-search" class="page-search" placeholder="Search decks...">
+                    <button id="new-deck-btn" class="btn btn-primary">New Deck</button>
+                </div>
+            </div>
+            <div id="deck-list" class="card-grid"></div>
+        </div>
+
+        <!-- ===== Exercises Page ===== -->
+        <div id="exercises-page" class="page">
+            <div class="page-header">
+                <h1 class="page-title">Exercises</h1>
+                <div class="deck-picker" id="deck-picker">
+                    <span class="deck-picker-label">Studying:</span>
+                    <button class="deck-picker-btn" id="deck-picker-btn">
+                        <strong id="exercises-deck-name">No deck selected</strong>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="deck-picker-dropdown" id="deck-picker-dropdown"></div>
+                </div>
+            </div>
+            <div class="exercises-grid" id="exercises-grid">
+                <button class="exercise-card" data-mode="study" id="study-mode-btn">
+                    <svg class="exercise-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <span class="exercise-card-name">Flashcards</span>
+                    <span class="exercise-card-desc">Flip through cards at your own pace</span>
+                </button>
+                <button class="exercise-card" data-mode="review" id="review-mode-btn">
+                    <svg class="exercise-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span class="exercise-card-name">Learn</span>
+                    <span class="exercise-card-desc">Spaced repetition review</span>
+                    <span class="exercise-card-badge" id="due-count">0</span>
+                </button>
+                <button class="exercise-card" data-mode="match" id="match-mode-btn">
+                    <svg class="exercise-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    <span class="exercise-card-name">Match</span>
+                    <span class="exercise-card-desc">Match terms to definitions</span>
+                </button>
+                <button class="exercise-card" data-mode="write" id="write-mode-btn">
+                    <svg class="exercise-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <span class="exercise-card-name">Write</span>
+                    <span class="exercise-card-desc">Type the answer from memory</span>
+                </button>
+                <button class="exercise-card" data-mode="survival" id="survival-mode-btn">
+                    <svg class="exercise-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <span class="exercise-card-name">Survival</span>
+                    <span class="exercise-card-desc">3 lives, how far can you go?</span>
+                </button>
+                <button class="exercise-card" data-mode="mc" id="mc-mode-btn">
+                    <svg class="exercise-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>
+                    <span class="exercise-card-name">Multiple Choice</span>
+                    <span class="exercise-card-desc">Pick the correct answer</span>
+                </button>
+                <button class="exercise-card" data-mode="tf" id="tf-mode-btn">
+                    <svg class="exercise-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <span class="exercise-card-name">True / False</span>
+                    <span class="exercise-card-desc">Is this the correct definition?</span>
+                </button>
+                <button class="exercise-card" data-mode="speed" id="speed-mode-btn">
+                    <svg class="exercise-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span class="exercise-card-name">Speed Round</span>
+                    <span class="exercise-card-desc">Answer before time runs out</span>
+                </button>
+                <button class="exercise-card" data-mode="blank" id="blank-mode-btn">
+                    <svg class="exercise-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+                    <span class="exercise-card-name">Fill in the Blank</span>
+                    <span class="exercise-card-desc">Complete the missing word</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Hidden mode grid for JS compatibility -->
+        <div class="mode-grid" id="mode-grid" style="display:none"></div>
 
         <!-- Study View -->
         <div id="study-view" class="view active">
+            <!-- Progress Tracker -->
+            <div id="progress-tracker" class="progress-tracker" style="display:none">
+                <div class="progress-tracker-bar">
+                    <div class="progress-bar-know" id="progress-bar-know"></div>
+                    <div class="progress-bar-learning" id="progress-bar-learning"></div>
+                </div>
+                <div class="progress-tracker-labels">
+                    <span class="progress-label know"><span class="progress-dot know"></span> Know <strong id="progress-know-count">0</strong></span>
+                    <span class="progress-label learning"><span class="progress-dot learning"></span> Learning <strong id="progress-learning-count">0</strong></span>
+                    <span class="progress-label unseen"><span class="progress-dot unseen"></span> Not studied <strong id="progress-unseen-count">0</strong></span>
+                </div>
+            </div>
+            <!-- Know / Still Learning buttons (shown after flip when tracking) -->
+            <div id="track-buttons" class="track-buttons" style="display:none">
+                <button class="track-btn track-btn-no" id="track-still-learning">Still learning</button>
+                <button class="track-btn track-btn-yes" id="track-know">Know it</button>
+            </div>
             <div class="flashcard-wrapper">
                 <div class="card-container">
                     <div id="flashcard" class="flashcard">
                         <div class="card-front">
                             <div class="card-top-bar">
                                 <span class="card-hint">Click to flip</span>
-                                <button id="tts-play-btn" class="card-icon-btn" title="Listen">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                                </button>
+                                <div class="card-top-actions">
+                                    <button id="star-btn" class="card-icon-btn" title="Star card">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                    </button>
+                                    <button id="tts-play-btn" class="card-icon-btn" title="Listen">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                                    </button>
+                                </div>
                             </div>
                             <div id="question-image" class="card-image"></div>
                             <div id="question-text" class="card-text">Create a deck to get started</div>
@@ -173,6 +255,81 @@
                 <button id="shuffle-btn" class="control-btn" title="Shuffle">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
                 </button>
+                <button id="fullscreen-btn" class="control-btn" title="Fullscreen">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                </button>
+                <button id="study-settings-btn" class="control-btn" title="Options">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+            </div>
+
+            <!-- Settings Panel -->
+            <div id="study-settings" class="study-settings" style="display:none">
+                <h3 class="settings-title">Options</h3>
+
+                <div class="settings-item">
+                    <div class="settings-item-text">
+                        <strong>Track progress</strong>
+                        <span>Sort flashcards to keep track of what you know and what you're still learning</span>
+                    </div>
+                    <label class="toggle"><input type="checkbox" id="opt-track-progress" checked><span class="toggle-slider"></span></label>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-text">
+                        <strong>Study starred only</strong>
+                        <span>Only show cards you've starred</span>
+                    </div>
+                    <label class="toggle"><input type="checkbox" id="opt-starred-only"><span class="toggle-slider"></span></label>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-text">
+                        <strong>Spaced repetition</strong>
+                        <span>Prioritize cards you get wrong more often using spaced intervals</span>
+                    </div>
+                    <label class="toggle"><input type="checkbox" id="opt-spaced-rep"><span class="toggle-slider"></span></label>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-text">
+                        <strong>Front side</strong>
+                        <span>Choose what shows on the front of the card</span>
+                    </div>
+                    <select id="opt-front-side" class="settings-select">
+                        <option value="question">Term (front)</option>
+                        <option value="answer">Definition (back)</option>
+                    </select>
+                </div>
+
+                <div class="settings-divider"></div>
+
+                <div class="settings-item">
+                    <div class="settings-item-text">
+                        <strong>Keyboard shortcuts</strong>
+                    </div>
+                    <button class="settings-expand-btn" id="opt-shortcuts-toggle">View</button>
+                </div>
+                <div id="shortcuts-list" class="shortcuts-list" style="display:none">
+                    <div class="shortcut-row"><kbd>Space</kbd> Flip card</div>
+                    <div class="shortcut-row"><kbd>&larr;</kbd> Previous card</div>
+                    <div class="shortcut-row"><kbd>&rarr;</kbd> Next card</div>
+                    <div class="shortcut-row"><kbd>S</kbd> Shuffle deck</div>
+                    <div class="shortcut-row"><kbd>F</kbd> Fullscreen</div>
+                </div>
+
+                <div class="settings-divider"></div>
+
+                <div class="settings-item">
+                    <div class="settings-item-text">
+                        <strong>Text to speech</strong>
+                    </div>
+                    <label class="toggle"><input type="checkbox" id="opt-tts"><span class="toggle-slider"></span></label>
+                </div>
+
+                <div class="settings-divider"></div>
+
+                <button class="settings-link" id="opt-restart">Restart Flashcards</button>
             </div>
         </div>
 
@@ -274,6 +431,64 @@
             <div id="mc-result" class="game-result"></div>
         </div>
 
+        <!-- True/False View -->
+        <div id="tf-view" class="view">
+            <div class="game-bar">
+                <div class="game-chips">
+                    <span class="game-chip">Progress <strong id="tf-progress">0/0</strong></span>
+                    <span class="game-chip">Score <strong id="tf-score">0</strong></span>
+                </div>
+                <button id="tf-start-btn" class="btn btn-primary">Start True/False</button>
+            </div>
+            <div id="tf-game" class="tf-area">
+                <div class="tf-prompt-card" id="tf-term">Click Start to begin</div>
+                <div class="tf-definition" id="tf-definition"></div>
+                <div class="tf-buttons" id="tf-buttons" style="display:none">
+                    <button class="tf-btn tf-true" id="tf-true-btn">True</button>
+                    <button class="tf-btn tf-false" id="tf-false-btn">False</button>
+                </div>
+                <div id="tf-feedback" class="write-feedback"></div>
+            </div>
+            <div id="tf-result" class="game-result"></div>
+        </div>
+
+        <!-- Speed Round View -->
+        <div id="speed-view" class="view">
+            <div class="game-bar">
+                <div class="game-chips">
+                    <span class="game-chip">Progress <strong id="speed-progress">0/0</strong></span>
+                    <span class="game-chip">Score <strong id="speed-score">0</strong></span>
+                    <span class="game-chip" style="color:var(--danger)">Time <strong id="speed-timer">10</strong></span>
+                </div>
+                <button id="speed-start-btn" class="btn btn-primary">Start Speed Round</button>
+            </div>
+            <div id="speed-game" class="mc-area">
+                <div class="mc-prompt-card" id="speed-question">Click Start to begin</div>
+                <div class="speed-timer-bar"><div class="speed-timer-fill" id="speed-timer-fill"></div></div>
+                <div class="mc-options" id="speed-options"></div>
+            </div>
+            <div id="speed-result" class="game-result"></div>
+        </div>
+
+        <!-- Fill in the Blank View -->
+        <div id="blank-view" class="view">
+            <div class="game-bar">
+                <div class="game-chips">
+                    <span class="game-chip">Progress <strong id="blank-progress">0/0</strong></span>
+                    <span class="game-chip">Score <strong id="blank-score">0</strong></span>
+                </div>
+                <button id="blank-start-btn" class="btn btn-primary">Start Fill in the Blank</button>
+            </div>
+            <div id="blank-game" class="write-area">
+                <div class="write-prompt-card" id="blank-clue">Click Start to begin</div>
+                <div class="blank-display" id="blank-display"></div>
+                <input type="text" id="blank-input" class="write-input" placeholder="Type the missing word..." disabled>
+                <button id="blank-check-btn" class="btn btn-primary" disabled>Check</button>
+                <div id="blank-feedback" class="write-feedback"></div>
+            </div>
+            <div id="blank-result" class="game-result"></div>
+        </div>
+
         <!-- Manage View -->
         <div id="manage-view" class="view">
             <div class="manage-panel">
@@ -287,12 +502,29 @@
                     <textarea id="answer-input" rows="2" placeholder="Definition or answer"></textarea>
                 </div>
                 <div class="field">
-                    <label>Image (optional)</label>
-                    <div class="img-row">
-                        <input type="file" id="image-input" accept="image/*">
+                    <label>Front Image (optional)</label>
+                    <div class="drop-zone drop-zone-sm" id="front-drop-zone">
+                        <input type="file" id="front-image-input" accept="image/*" style="display:none">
+                        <div class="drop-zone-prompt" id="front-drop-prompt">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <span>Drop, paste, or <u>browse</u></span>
+                        </div>
+                        <div id="front-image-preview" class="image-preview"></div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Back Image (optional)</label>
+                    <div class="drop-zone drop-zone-sm" id="back-drop-zone">
+                        <input type="file" id="back-image-input" accept="image/*" style="display:none">
+                        <div class="drop-zone-prompt" id="back-drop-prompt">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <span>Drop, paste, or <u>browse</u></span>
+                        </div>
+                        <div id="back-image-preview" class="image-preview"></div>
+                    </div>
+                    <div class="img-row" style="margin-top:6px">
                         <button type="button" id="search-image-btn" class="btn btn-outline btn-sm">Search Image</button>
                     </div>
-                    <div id="image-preview" class="image-preview"></div>
                 </div>
                 <div class="btn-row">
                     <button id="save-card-btn" class="btn btn-primary">Add Card</button>
@@ -318,14 +550,96 @@
         </div>
     </div>
 
+    <!-- Modal: Global Search -->
+    <div id="search-modal" class="modal-overlay">
+        <div class="modal modal-wide search-modal">
+            <div class="search-input-wrap">
+                <svg class="search-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="global-search-input" class="search-input" placeholder="Search folders, decks, cards..." autofocus>
+                <kbd class="search-kbd">Esc</kbd>
+            </div>
+            <div id="search-results" class="search-results"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Move to Folder -->
+    <div id="move-folder-modal" class="modal-overlay">
+        <div class="modal">
+            <h3 id="move-folder-title">Move to folder</h3>
+            <div id="move-folder-list" class="move-folder-list"></div>
+            <div class="btn-row">
+                <button id="cancel-move-folder-btn" class="btn btn-outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Cover Image -->
+    <div id="cover-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Set Cover Image</h3>
+            <div class="drop-zone drop-zone-lg" id="cover-drop-zone">
+                <input type="file" id="cover-file-input" accept="image/*" style="display:none">
+                <div class="drop-zone-prompt" id="cover-drop-prompt">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>Drop image here, paste, or <u>browse</u></span>
+                </div>
+                <div id="cover-preview" class="image-preview"></div>
+            </div>
+            <div class="field" style="margin-top:10px">
+                <input type="text" id="cover-url-input" class="modal-input" placeholder="Or paste an image URL..." style="margin:0">
+            </div>
+            <div class="btn-row">
+                <button id="save-cover-btn" class="btn btn-primary">Save</button>
+                <button id="remove-cover-btn" class="btn btn-outline">Remove</button>
+                <button id="cancel-cover-btn" class="btn btn-outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: New Folder -->
+    <div id="folder-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Create New Folder</h3>
+            <input type="text" id="folder-name-input" class="modal-input" placeholder="Folder name...">
+            <div class="btn-row">
+                <button id="create-folder-btn" class="btn btn-primary">Create</button>
+                <button id="cancel-folder-btn" class="btn btn-outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Import -->
     <div id="import-modal" class="modal-overlay">
         <div class="modal modal-wide">
             <h3>Import Flashcards</h3>
             <div class="info-callout">
-                <strong>Format:</strong> FRONT&nbsp;&nbsp;&nbsp;&nbsp;BACK (4 spaces)&emsp;|&emsp;One card per line
+                <strong>Separators:</strong> Tab, | pipe, ; semicolon, or 4 spaces<br>
+                <strong>Multi-line:</strong> Use blank line between cards, --- between front/back
             </div>
-            <textarea id="import-input" class="modal-input mono" rows="7" placeholder="What is HTML    HyperText Markup Language"></textarea>
+            <div class="import-format-row">
+                <label>Format:</label>
+                <select id="import-format" class="import-format-select">
+                    <option value="auto">Auto-detect</option>
+                    <option value="tab">Tab separated</option>
+                    <option value="pipe">Pipe |</option>
+                    <option value="semicolon">Semicolon ;</option>
+                    <option value="4space">4 spaces</option>
+                    <option value="multiline">Multi-line (blank line between cards)</option>
+                </select>
+            </div>
+            <textarea id="import-input" class="modal-input mono" rows="7" placeholder="What is HTML	HyperText Markup Language
+CSS | Cascading Style Sheets
+JavaScript ; A programming language
+
+Or multi-line:
+
+What is HTML
+---
+HyperText Markup Language
+
+What is CSS
+---
+Cascading Style Sheets"></textarea>
             <div id="import-errors" class="import-errors"></div>
             <div class="btn-row">
                 <button id="import-cards-btn" class="btn btn-primary">Import</button>
