@@ -246,13 +246,6 @@
                 <button class="track-btn track-btn-no" id="track-still-learning">Still learning</button>
                 <button class="track-btn track-btn-yes" id="track-know">Know it</button>
             </div>
-            <div id="leitner-display" class="leitner-display">
-                <div class="leitner-box" data-box="1"><div class="leitner-label">Box 1</div><div class="leitner-count" id="leitner-1">0</div></div>
-                <div class="leitner-box" data-box="2"><div class="leitner-label">Box 2</div><div class="leitner-count" id="leitner-2">0</div></div>
-                <div class="leitner-box" data-box="3"><div class="leitner-label">Box 3</div><div class="leitner-count" id="leitner-3">0</div></div>
-                <div class="leitner-box" data-box="4"><div class="leitner-label">Box 4</div><div class="leitner-count" id="leitner-4">0</div></div>
-                <div class="leitner-box" data-box="5"><div class="leitner-label">Box 5</div><div class="leitner-count" id="leitner-5">0</div><div class="leitner-sub">Mastered</div></div>
-            </div>
             <div class="flashcard-wrapper">
                 <div class="card-container">
                     <div id="flashcard" class="flashcard">
@@ -725,13 +718,13 @@ img: https://example.com/html.png"></textarea>
         </div>
     </div>
 
-    <script src="script.js"></script>
-    <script src="features.js"></script>
     <div id="undo-toast" class="undo-toast" style="display:none">
         <span id="undo-toast-text"></span>
         <button class="undo-toast-btn" id="undo-toast-btn">Undo</button>
     </div>
 
+    <script src="script.js"></script>
+    <script src="features.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js');

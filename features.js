@@ -108,5 +108,6 @@ function confirmMerge() {
     if (currentPage === 'decks') renderDecksPage();
 }
 
-// Merge confirm listener - element exists above this script in DOM
-document.getElementById('merge-confirm-btn').addEventListener('click', confirmMerge);
+// Merge confirm listener
+const mergeBtn = document.getElementById('merge-confirm-btn');
+if (mergeBtn) mergeBtn.addEventListener('click', confirmMerge);

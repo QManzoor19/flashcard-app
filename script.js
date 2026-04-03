@@ -198,7 +198,7 @@ function init() {
     renderManageView();
     updateStudyView();
     updateDueCount();
-    applyDeckColor();
+    if (typeof applyDeckColor === 'function') applyDeckColor();
     switchPage('home');
     checkShareImport();
 }
@@ -418,7 +418,7 @@ function switchDeck(deckId) {
     renderManageView();
     updateStudyView();
     updateDueCount();
-    applyDeckColor();
+    if (typeof applyDeckColor === 'function') applyDeckColor();
 }
 
 function updateDeckSelector(filterText) {
@@ -2093,9 +2093,6 @@ function getStudyCards() {
     if (studySettings.starredOnly) {
         cards = cards.filter(c => c.starred);
     }
-    if (leitnerFilter !== null) {
-        cards = cards.filter(c => (c.leitnerBox || 1) === leitnerFilter);
-    }
     if (studySettings.spacedRep) {
         // Sort by next review time (soonest first), then by lowest ease factor
         cards = [...cards].sort((a, b) => {
@@ -2182,20 +2179,6 @@ function updateLeitnerDisplay() {
     });
 }
 
-// Leitner box click handler
-document.getElementById('leitner-display').addEventListener('click', function(e) {
-    const box = e.target.closest('.leitner-box');
-    if (!box) return;
-    const boxNum = parseInt(box.dataset.box);
-    if (leitnerFilter === boxNum) {
-        leitnerFilter = null;
-    } else {
-        leitnerFilter = boxNum;
-    }
-    appData.currentCardIndex = 0;
-    updateLeitnerDisplay();
-    updateStudyView();
-});
 
 function showTrackButtons() {
     if (!studySettings.trackProgress) return;
@@ -2221,8 +2204,7 @@ function markCard(status) {
         }
         saveData();
         updateProgressTracker();
-        updateLeitnerDisplay();
-
+    
         // If spaced rep is on, update ease factor
         if (studySettings.spacedRep) {
             if (status === 'know') {
@@ -2381,7 +2363,7 @@ function updateStudyView() {
     const cards = getStudyCards();
 
     if (cards.length === 0) {
-        questionText.textContent = leitnerFilter !== null ? 'No cards in Box ' + leitnerFilter : studySettings.starredOnly ? 'No starred cards — star some cards first' : 'No cards yet — go to Manage to add some';
+        questionText.textContent = studySettings.starredOnly ? 'No starred cards — star some cards first' : 'No cards yet — go to Manage to add some';
         answerText.textContent = '';
         questionImage.innerHTML = '';
         answerImage.innerHTML = '';
@@ -2390,8 +2372,7 @@ function updateStudyView() {
         nextBtn.disabled = true;
         shuffleBtn.disabled = true;
         updateStarButton(null);
-        updateLeitnerDisplay();
-        renderStudyCardList([]);
+            renderStudyCardList([]);
         return;
     }
 
@@ -2408,7 +2389,6 @@ function updateStudyView() {
     progressText.textContent = `${appData.currentCardIndex + 1} / ${cards.length}`;
     updateStarButton(currentCard);
     updateProgressTracker();
-    updateLeitnerDisplay();
     hideTrackButtons();
     autoPlayTTS();
     renderStudyCardList(cards);
