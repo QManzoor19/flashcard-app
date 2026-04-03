@@ -86,6 +86,12 @@ body {
     justify-content: center;
 }
 
+.logo-mark-img {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+}
+
 .logo-text {
     font-weight: 700;
     font-size: 19px;
@@ -1104,6 +1110,124 @@ body.light .theme-icon::after { content: '\263E'; }
     padding: 4px 10px;
 }
 
+/* ===== Study Card List ===== */
+.study-card-list {
+    margin-top: 24px;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.study-card-list-header {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-2);
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.study-card-list-header:hover {
+    border-color: var(--accent);
+    color: var(--text-1);
+}
+
+.study-list-toggle {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+}
+
+.study-card-list-items {
+    animation: fadeUp .2s ease;
+}
+
+.study-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.study-list-item:hover {
+    background: var(--bg-hover);
+}
+
+.study-list-item.current {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+}
+
+.study-list-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-3);
+    min-width: 20px;
+}
+
+.study-list-term {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-1);
+}
+
+.study-list-def {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.study-list-star {
+    color: var(--text-3);
+    font-size: 14px;
+}
+
+.study-list-star.starred {
+    color: #ffd43b;
+}
+
+/* Word list under deck cards */
+.grid-card-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.grid-card-word {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+}
+
+.grid-card-word.more {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-3);
+    font-style: italic;
+}
+
 .grid-card-edit-btn {
     position: absolute;
     top: 8px;
@@ -1156,6 +1280,100 @@ body.light .theme-icon::after { content: '\263E'; }
 .grid-card.active-deck {
     border-color: var(--accent);
     background: rgba(66,85,255,.08);
+}
+
+/* ===== Select Mode ===== */
+.select-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    animation: fadeUp .15s ease;
+}
+
+.select-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-right: 4px;
+}
+
+.danger-btn {
+    color: var(--danger) !important;
+    border-color: var(--danger) !important;
+}
+
+.danger-btn:hover {
+    background: rgba(255,107,107,.1) !important;
+}
+
+.grid-card.selectable {
+    cursor: pointer;
+}
+
+.grid-card .select-check {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+    z-index: 2;
+}
+
+.grid-card.selected .select-check {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.grid-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(66,85,255,.3);
+}
+
+/* Add decks modal checkboxes */
+.add-deck-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-2);
+    font-size: 14px;
+}
+
+.add-deck-item:hover {
+    background: var(--bg-hover);
+}
+
+.add-deck-item input[type=checkbox] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.add-deck-item .add-deck-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.add-deck-item .add-deck-count {
+    font-size: 12px;
+    color: var(--text-3);
 }
 
 /* ===== Exercise Cards ===== */
@@ -2319,6 +2537,23 @@ body.light .theme-icon::after { content: '\263E'; }
 }
 
 .import-errors { margin-bottom: 10px; max-height: 160px; overflow-y: auto; }
+
+.import-images-section { margin: 12px 0; }
+.import-images-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.85rem; color: var(--text-2); cursor: pointer; margin-bottom: 8px;
+}
+.import-images-preview {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.import-images-preview .img-thumb {
+    width: 50px; height: 50px; border-radius: var(--radius-sm);
+    object-fit: cover; border: 1px solid var(--border);
+}
+.import-images-preview .img-thumb-label {
+    font-size: 0.6rem; color: var(--text-3); text-align: center;
+    max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 .error-message {
     background: rgba(255,107,107,.08);

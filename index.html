@@ -20,7 +20,7 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a class="logo" href="#" onclick="switchPage('home');return false;">
-                <div class="logo-mark">F</div>
+                <img class="logo-mark-img" src="icon.svg" alt="FlashDeck">
                 <span class="logo-text">FlashDeck</span>
             </a>
         </div>
@@ -51,18 +51,28 @@
         <div class="sidebar-divider"></div>
 
         <div class="sidebar-bottom">
-            <button id="manage-mode-btn" class="nav-item">
+            <button id="study-settings-btn" class="nav-item">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                Manage Cards
+                Settings
+            </button>
+            <button id="manage-mode-btn" class="nav-item" style="display:none"></button>
+            <button id="export-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Export Deck
+            </button>
+            <button id="export-all-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Export All
             </button>
             <button id="import-btn" class="nav-item">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Import
+                Import Text
             </button>
-            <button id="export-btn" class="nav-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                Export
+            <button id="import-file-btn" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Import File
             </button>
+            <input type="file" id="import-file-input" accept=".json" style="display:none">
         </div>
     </aside>
 
@@ -106,7 +116,17 @@
         <div id="folders-page" class="page">
             <div class="page-header">
                 <h1 class="page-title">Folders</h1>
-                <button id="new-folder-btn" class="btn btn-primary">New Folder</button>
+                <div class="page-header-actions">
+                    <button class="btn btn-outline btn-sm" id="select-folders-btn" onclick="toggleSelectMode('folders')">Select</button>
+                    <button id="new-folder-btn" class="btn btn-primary">New Folder</button>
+                </div>
+            </div>
+            <div id="select-bar-folders" class="select-bar" style="display:none">
+                <span class="select-count" id="select-count-folders">0 selected</span>
+                <button class="btn btn-outline btn-sm" onclick="selectAll('folders')">Select All</button>
+                <button class="btn btn-outline btn-sm" onclick="exportSelected('folders')">Export</button>
+                <button class="btn btn-outline btn-sm danger-btn" onclick="deleteSelected('folders')">Delete</button>
+                <button class="btn btn-outline btn-sm" onclick="toggleSelectMode('folders')">Cancel</button>
             </div>
             <div id="folders-grid" class="card-grid"></div>
         </div>
@@ -117,8 +137,17 @@
                 <h1 class="page-title" id="decks-page-title">All Decks</h1>
                 <div class="page-header-actions">
                     <input type="text" id="deck-search" class="page-search" placeholder="Search decks...">
+                    <button class="btn btn-outline btn-sm" id="select-decks-btn" onclick="toggleSelectMode('decks')">Select</button>
                     <button id="new-deck-btn" class="btn btn-primary">New Deck</button>
                 </div>
+            </div>
+            <div id="select-bar-decks" class="select-bar" style="display:none">
+                <span class="select-count" id="select-count-decks">0 selected</span>
+                <button class="btn btn-outline btn-sm" onclick="selectAll('decks')">Select All</button>
+                <button class="btn btn-outline btn-sm" onclick="moveSelectedToFolder()">Move to Folder</button>
+                <button class="btn btn-outline btn-sm" onclick="exportSelected('decks')">Export</button>
+                <button class="btn btn-outline btn-sm danger-btn" onclick="deleteSelected('decks')">Delete</button>
+                <button class="btn btn-outline btn-sm" onclick="toggleSelectMode('decks')">Cancel</button>
             </div>
             <div id="deck-list" class="card-grid"></div>
         </div>
@@ -258,9 +287,6 @@
                 <button id="fullscreen-btn" class="control-btn" title="Fullscreen">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
                 </button>
-                <button id="study-settings-btn" class="control-btn" title="Options">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                </button>
             </div>
 
             <!-- Settings Panel -->
@@ -304,33 +330,11 @@
 
                 <div class="settings-divider"></div>
 
-                <div class="settings-item">
-                    <div class="settings-item-text">
-                        <strong>Keyboard shortcuts</strong>
-                    </div>
-                    <button class="settings-expand-btn" id="opt-shortcuts-toggle">View</button>
-                </div>
-                <div id="shortcuts-list" class="shortcuts-list" style="display:none">
-                    <div class="shortcut-row"><kbd>Space</kbd> Flip card</div>
-                    <div class="shortcut-row"><kbd>&larr;</kbd> Previous card</div>
-                    <div class="shortcut-row"><kbd>&rarr;</kbd> Next card</div>
-                    <div class="shortcut-row"><kbd>S</kbd> Shuffle deck</div>
-                    <div class="shortcut-row"><kbd>F</kbd> Fullscreen</div>
-                </div>
-
-                <div class="settings-divider"></div>
-
-                <div class="settings-item">
-                    <div class="settings-item-text">
-                        <strong>Text to speech</strong>
-                    </div>
-                    <label class="toggle"><input type="checkbox" id="opt-tts"><span class="toggle-slider"></span></label>
-                </div>
-
-                <div class="settings-divider"></div>
-
                 <button class="settings-link" id="opt-restart">Restart Flashcards</button>
             </div>
+
+            <!-- Card List -->
+            <div class="study-card-list" id="study-card-list"></div>
         </div>
 
         <!-- Review View -->
@@ -562,6 +566,18 @@
         </div>
     </div>
 
+    <!-- Modal: Add Decks to Folder -->
+    <div id="add-decks-modal" class="modal-overlay">
+        <div class="modal">
+            <h3 id="add-decks-title">Add decks to folder</h3>
+            <div id="add-decks-list" class="move-folder-list"></div>
+            <div class="btn-row">
+                <button id="confirm-add-decks-btn" class="btn btn-primary">Add Selected</button>
+                <button id="cancel-add-decks-btn" class="btn btn-outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Move to Folder -->
     <div id="move-folder-modal" class="modal-overlay">
         <div class="modal">
@@ -614,7 +630,8 @@
             <h3>Import Flashcards</h3>
             <div class="info-callout">
                 <strong>Separators:</strong> Tab, | pipe, ; semicolon, or 4 spaces<br>
-                <strong>Multi-line:</strong> Use blank line between cards, --- between front/back
+                <strong>Multi-line:</strong> Use blank line between cards, --- between front/back<br>
+                <strong>Images:</strong> Add image URL after answer with another separator: <code>front | back | imageURL</code>
             </div>
             <div class="import-format-row">
                 <label>Format:</label>
@@ -627,20 +644,33 @@
                     <option value="multiline">Multi-line (blank line between cards)</option>
                 </select>
             </div>
-            <textarea id="import-input" class="modal-input mono" rows="7" placeholder="What is HTML	HyperText Markup Language
-CSS | Cascading Style Sheets
+            <textarea id="import-input" class="modal-input mono" rows="7" placeholder="What is HTML | HyperText Markup Language
+CSS | Cascading Style Sheets | https://example.com/css.png
 JavaScript ; A programming language
 
-Or multi-line:
+Or multi-line with images:
 
 What is HTML
 ---
 HyperText Markup Language
-
-What is CSS
----
-Cascading Style Sheets"></textarea>
+img: https://example.com/html.png"></textarea>
             <div id="import-errors" class="import-errors"></div>
+            <div class="import-images-section">
+                <label class="import-images-label">
+                    <input type="checkbox" id="import-images-toggle"> Attach images to imported cards
+                </label>
+                <div id="import-images-area" style="display:none">
+                    <p style="font-size:0.8rem;color:var(--text-3);margin-bottom:8px">Drop images here or click to browse. File names should match card fronts (e.g. "HTML.png" matches "HTML" card).</p>
+                    <div class="drop-zone drop-zone-sm" id="import-images-drop">
+                        <input type="file" id="import-images-input" accept="image/*" multiple style="display:none">
+                        <div class="drop-zone-prompt" id="import-images-prompt">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <span>Drop images or <u>browse</u></span>
+                        </div>
+                        <div id="import-images-preview" class="import-images-preview"></div>
+                    </div>
+                </div>
+            </div>
             <div class="btn-row">
                 <button id="import-cards-btn" class="btn btn-primary">Import</button>
                 <button id="cancel-import-btn" class="btn btn-outline">Cancel</button>

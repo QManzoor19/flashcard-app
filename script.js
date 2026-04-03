@@ -9,6 +9,7 @@ let appData = {
 let editingCardId = null;
 let currentFrontImage = '';
 let currentBackImage = '';
+let importImageMap = {};
 let reviewQueue = [];
 let currentReviewIndex = 0;
 let showingAnswer = false;
@@ -451,8 +452,13 @@ function createFolder(name) {
 }
 
 function deleteFolder(folderId) {
-    // Move decks out of folder
-    appData.decks.forEach(d => { if (d.folderId === folderId) d.folderId = null; });
+    // Delete all decks inside the folder
+    const deletedDeckIds = appData.decks.filter(d => d.folderId === folderId).map(d => d.id);
+    appData.decks = appData.decks.filter(d => d.folderId !== folderId);
+    if (deletedDeckIds.includes(appData.currentDeck)) {
+        appData.currentDeck = appData.decks.length > 0 ? appData.decks[0].id : null;
+        appData.currentCardIndex = 0;
+    }
     appData.folders = appData.folders.filter(f => f.id !== folderId);
     saveData();
     if (currentPage === 'folders') renderFoldersPage();
@@ -624,6 +630,35 @@ function showDeckContextMenu(e, deck, folderOptions) {
         menu.appendChild(reposOpt);
     }
 
+    // Rename deck
+    const renameOpt = document.createElement('div');
+    renameOpt.className = 'context-menu-item';
+    renameOpt.textContent = 'Rename deck';
+    renameOpt.onclick = () => {
+        closeContextMenu();
+        const newName = prompt('Rename deck:', deck.name);
+        if (newName && newName.trim()) {
+            deck.name = newName.trim();
+            saveData();
+            updateDeckSelector();
+            if (currentPage === 'decks') renderDecksPage();
+            if (currentPage === 'folders') renderFoldersPage();
+            if (currentPage === 'home') renderHomePage();
+        }
+    };
+    menu.appendChild(renameOpt);
+
+    // Edit cards
+    const editCardsOpt = document.createElement('div');
+    editCardsOpt.className = 'context-menu-item';
+    editCardsOpt.textContent = 'Edit cards';
+    editCardsOpt.onclick = () => {
+        closeContextMenu();
+        switchDeck(deck.id);
+        switchMode('manage');
+    };
+    menu.appendChild(editCardsOpt);
+
     const moveOpt = document.createElement('div');
     moveOpt.className = 'context-menu-item';
     moveOpt.textContent = 'Move to folder';
@@ -689,6 +724,13 @@ function showFolderContextMenu(e, folder) {
         menu.appendChild(reposOpt);
     }
 
+    // Add decks to folder
+    const addDecksOpt = document.createElement('div');
+    addDecksOpt.className = 'context-menu-item';
+    addDecksOpt.textContent = 'Add decks to folder';
+    addDecksOpt.onclick = () => { closeContextMenu(); showAddDecksToFolder(folder); };
+    menu.appendChild(addDecksOpt);
+
     const rename = document.createElement('div');
     rename.className = 'context-menu-item';
     rename.textContent = 'Rename folder';
@@ -707,7 +749,7 @@ function showFolderContextMenu(e, folder) {
     del.className = 'context-menu-item danger';
     del.textContent = 'Delete folder';
     del.onclick = () => {
-        if (confirm(`Delete folder "${folder.name}"? Decks inside will be moved out.`)) {
+        if (confirm(`Delete folder "${folder.name}" and all decks inside it? This cannot be undone.`)) {
             deleteFolder(folder.id);
         }
         closeContextMenu();
@@ -958,6 +1000,173 @@ function performSearch(query) {
     }
 }
 
+// ===== SELECT MODE =====
+let selectMode = null; // null, 'folders', or 'decks'
+let selectedIds = new Set();
+
+function toggleSelectMode(type) {
+    if (selectMode === type) {
+        selectMode = null;
+        selectedIds.clear();
+        document.getElementById('select-bar-' + type).style.display = 'none';
+        document.getElementById('select-' + type + '-btn').textContent = 'Select';
+        if (type === 'folders') renderFoldersPage();
+        else renderDecksPage();
+    } else {
+        selectMode = type;
+        selectedIds.clear();
+        document.getElementById('select-bar-' + type).style.display = '';
+        document.getElementById('select-' + type + '-btn').textContent = 'Cancel';
+        updateSelectCount();
+        if (type === 'folders') renderFoldersPage();
+        else renderDecksPage();
+    }
+}
+
+function toggleSelect(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    updateSelectCount();
+    // Toggle visual
+    const el = document.querySelector(`[data-select-id="${id}"]`);
+    if (el) el.classList.toggle('selected', selectedIds.has(id));
+}
+
+function selectAll(type) {
+    if (type === 'folders') {
+        appData.folders.forEach(f => selectedIds.add(f.id));
+        renderFoldersPage();
+    } else {
+        const visible = viewingFolderId
+            ? appData.decks.filter(d => d.folderId === viewingFolderId)
+            : appData.decks;
+        visible.forEach(d => selectedIds.add(d.id));
+        renderDecksPage();
+    }
+    updateSelectCount();
+}
+
+function updateSelectCount() {
+    const type = selectMode;
+    if (!type) return;
+    document.getElementById('select-count-' + type).textContent = selectedIds.size + ' selected';
+}
+
+function deleteSelected(type) {
+    if (selectedIds.size === 0) { alert('Nothing selected'); return; }
+    if (type === 'folders') {
+        if (!confirm(`Delete ${selectedIds.size} folder(s) and all decks inside? This cannot be undone.`)) return;
+        selectedIds.forEach(id => {
+            appData.decks = appData.decks.filter(d => d.folderId !== id);
+            appData.folders = appData.folders.filter(f => f.id !== id);
+        });
+        if (appData.currentDeck && !appData.decks.find(d => d.id === appData.currentDeck)) {
+            appData.currentDeck = appData.decks.length > 0 ? appData.decks[0].id : null;
+            appData.currentCardIndex = 0;
+        }
+    } else {
+        if (!confirm(`Delete ${selectedIds.size} deck(s)?`)) return;
+        selectedIds.forEach(id => {
+            appData.decks = appData.decks.filter(d => d.id !== id);
+            if (appData.currentDeck === id) {
+                appData.currentDeck = appData.decks.length > 0 ? appData.decks[0].id : null;
+                appData.currentCardIndex = 0;
+            }
+        });
+    }
+    saveData();
+    selectedIds.clear();
+    toggleSelectMode(type);
+    updateDeckSelector();
+}
+
+function exportSelected(type) {
+    if (selectedIds.size === 0) { alert('Nothing selected'); return; }
+    if (type === 'folders') {
+        const folders = appData.folders.filter(f => selectedIds.has(f.id));
+        const data = {
+            type: 'flashdeck-backup',
+            exportDate: new Date().toISOString(),
+            folders: folders.map(f => ({
+                name: f.name, icon: f.icon || '', cover: f.cover || '', coverPos: f.coverPos || 'center',
+                decks: appData.decks.filter(d => d.folderId === f.id).map(d => ({
+                    name: d.name, icon: d.icon || '', cover: d.cover || '', coverPos: d.coverPos || 'center',
+                    cards: d.cards.map(c => ({ question: c.question, answer: c.answer, frontImage: c.frontImage || '', backImage: c.backImage || '', starred: c.starred || false }))
+                }))
+            })),
+            loosDecks: []
+        };
+        downloadJSON(data, `FlashDeck-${folders.length}-folders.json`);
+    } else {
+        const decks = appData.decks.filter(d => selectedIds.has(d.id));
+        const data = {
+            type: 'flashdeck-backup',
+            exportDate: new Date().toISOString(),
+            folders: [],
+            loosDecks: decks.map(d => ({
+                name: d.name, icon: d.icon || '', cover: d.cover || '', coverPos: d.coverPos || 'center',
+                cards: d.cards.map(c => ({ question: c.question, answer: c.answer, frontImage: c.frontImage || '', backImage: c.backImage || '', starred: c.starred || false }))
+            }))
+        };
+        downloadJSON(data, `FlashDeck-${decks.length}-decks.json`);
+    }
+}
+
+function moveSelectedToFolder() {
+    if (selectedIds.size === 0) { alert('Nothing selected'); return; }
+    const modal = document.getElementById('move-folder-modal');
+    const list = document.getElementById('move-folder-list');
+    const title = document.getElementById('move-folder-title');
+    title.textContent = `Move ${selectedIds.size} deck(s) to...`;
+    list.innerHTML = '';
+    appData.folders.forEach(f => {
+        const item = document.createElement('div');
+        item.className = 'move-folder-item';
+        item.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            ${f.icon ? `<span style="font-size:18px">${f.icon}</span>` : ''}<span>${f.name}</span>`;
+        item.onclick = () => {
+            selectedIds.forEach(id => moveDeckToFolder(id, f.id));
+            modal.classList.remove('active');
+            toggleSelectMode('decks');
+        };
+        list.appendChild(item);
+    });
+    if (list.children.length === 0) list.innerHTML = '<div style="padding:16px;color:var(--text-3);text-align:center">No folders yet.</div>';
+    modal.classList.add('active');
+}
+
+// Add decks to folder
+let addDecksFolderId = null;
+
+function showAddDecksToFolder(folder) {
+    addDecksFolderId = folder.id;
+    const modal = document.getElementById('add-decks-modal');
+    const list = document.getElementById('add-decks-list');
+    document.getElementById('add-decks-title').textContent = `Add decks to "${folder.name}"`;
+    list.innerHTML = '';
+
+    const available = appData.decks.filter(d => d.folderId !== folder.id);
+    if (available.length === 0) {
+        list.innerHTML = '<div style="padding:16px;color:var(--text-3);text-align:center">All decks are already in this folder.</div>';
+    } else {
+        available.forEach(d => {
+            const item = document.createElement('label');
+            item.className = 'add-deck-item';
+            const folderName = d.folderId ? (appData.folders.find(f => f.id === d.folderId)?.name || '') : 'No folder';
+            item.innerHTML = `<input type="checkbox" value="${d.id}"><span class="add-deck-name">${d.icon || ''} ${d.name}</span><span class="add-deck-count">${d.cards.length} cards · ${folderName}</span>`;
+            list.appendChild(item);
+        });
+    }
+    modal.classList.add('active');
+}
+
+function confirmAddDecks() {
+    const checkboxes = document.querySelectorAll('#add-decks-list input[type=checkbox]:checked');
+    checkboxes.forEach(cb => moveDeckToFolder(cb.value, addDecksFolderId));
+    document.getElementById('add-decks-modal').classList.remove('active');
+    if (currentPage === 'folders') renderFoldersPage();
+}
+
 function closeContextMenu() {
     const existing = document.getElementById('context-menu');
     if (existing) existing.remove();
@@ -1092,12 +1301,16 @@ function renderFoldersPage() {
     appData.folders.forEach(folder => {
         const folderDecks = appData.decks.filter(d => d.folderId === folder.id);
         const card = document.createElement('div');
-        card.className = 'grid-card';
+        const isSelected = selectedIds.has(folder.id);
+        card.className = 'grid-card' + (selectMode === 'folders' ? ' selectable' : '') + (isSelected ? ' selected' : '');
+        card.dataset.selectId = folder.id;
         let coverHTML = folder.cover ? `<div class="grid-card-cover" style="background-image:url(${folder.cover});background-position:${folder.coverPos || 'center'}"></div>` : '';
         let iconHTML = folder.icon
             ? `<span class="grid-card-emoji">${folder.icon}</span>`
             : `<svg class="grid-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+        const selectCheckHTML = selectMode === 'folders' ? `<div class="select-check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>` : '';
         card.innerHTML = `
+            ${selectCheckHTML}
             ${coverHTML}
             <div class="grid-card-body">
                 ${iconHTML}
@@ -1113,6 +1326,7 @@ function renderFoldersPage() {
             showFolderContextMenu(e, folder);
         };
         card.onclick = () => {
+            if (selectMode === 'folders') { toggleSelect(folder.id); return; }
             viewingFolderId = folder.id;
             decksPageTitle.textContent = folder.name;
             switchPage('decks');
@@ -1156,13 +1370,17 @@ function renderDecksPage() {
 
     decksToShow.forEach(d => {
         const card = document.createElement('div');
-        card.className = 'grid-card' + (d.id === appData.currentDeck ? ' active-deck' : '');
+        const isSelected = selectedIds.has(d.id);
+        card.className = 'grid-card' + (d.id === appData.currentDeck ? ' active-deck' : '') + (selectMode === 'decks' ? ' selectable' : '') + (isSelected ? ' selected' : '');
+        card.dataset.selectId = d.id;
         const folderName = d.folderId ? (appData.folders.find(f => f.id === d.folderId)?.name || '') : '';
         let coverHTML = d.cover ? `<div class="grid-card-cover" style="background-image:url(${d.cover});background-position:${d.coverPos || 'center'}"></div>` : '';
         let iconHTML = d.icon
             ? `<span class="grid-card-emoji">${d.icon}</span>`
             : `<svg class="grid-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/></svg>`;
+        const selectCheckHTML = selectMode === 'decks' ? `<div class="select-check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>` : '';
         card.innerHTML = `
+            ${selectCheckHTML}
             ${coverHTML}
             <div class="grid-card-body">
                 ${iconHTML}
@@ -1178,6 +1396,7 @@ function renderDecksPage() {
             showDeckContextMenu(e, d, appData.folders);
         };
         card.onclick = () => {
+            if (selectMode === 'decks') { toggleSelect(d.id); return; }
             switchDeck(d.id);
             switchPage('exercises');
         };
@@ -1588,7 +1807,8 @@ function applyStudySettings() {
     document.getElementById('opt-starred-only').checked = studySettings.starredOnly;
     document.getElementById('opt-spaced-rep').checked = studySettings.spacedRep;
     document.getElementById('opt-front-side').value = studySettings.frontSide;
-    document.getElementById('opt-tts').checked = studySettings.tts;
+    const ttsEl = document.getElementById('opt-tts');
+    if (ttsEl) ttsEl.checked = studySettings.tts;
     updateStudyView();
 }
 
@@ -1630,6 +1850,10 @@ function toggleFullscreen() {
                 </div>
             </div>
         </div>
+        <div id="fs-track-buttons" class="track-buttons" style="display:none">
+            <button class="track-btn track-btn-no" id="fs-track-learning">Still learning</button>
+            <button class="track-btn track-btn-yes" id="fs-track-know">Know it</button>
+        </div>
         <div class="card-controls">
             <button class="control-btn" id="fs-prev">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -1652,23 +1876,46 @@ function toggleFullscreen() {
     updateFullscreenCard();
 
     const fsCard = document.getElementById('fs-flashcard');
-    fsCard.addEventListener('click', () => fsCard.classList.toggle('flipped'));
+    const fsTrackBtns = document.getElementById('fs-track-buttons');
+    fsCard.addEventListener('click', () => {
+        fsCard.classList.toggle('flipped');
+        if (fsCard.classList.contains('flipped') && studySettings.trackProgress) {
+            fsTrackBtns.style.display = '';
+        } else {
+            fsTrackBtns.style.display = 'none';
+        }
+    });
     document.getElementById('fs-close').addEventListener('click', exitFullscreen);
-    document.getElementById('fs-prev').addEventListener('click', () => { previousCard(); updateFullscreenCard(); });
-    document.getElementById('fs-next').addEventListener('click', () => { nextCard(); updateFullscreenCard(); });
-    document.getElementById('fs-shuffle').addEventListener('click', () => { shuffleDeck(); updateFullscreenCard(); });
+    document.getElementById('fs-prev').addEventListener('click', () => { previousCard(); updateFullscreenCard(); fsTrackBtns.style.display = 'none'; });
+    document.getElementById('fs-next').addEventListener('click', () => { nextCard(); updateFullscreenCard(); fsTrackBtns.style.display = 'none'; });
+    document.getElementById('fs-shuffle').addEventListener('click', () => { shuffleDeck(); updateFullscreenCard(); fsTrackBtns.style.display = 'none'; });
     document.getElementById('fs-star-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         toggleStar();
         updateFullscreenCard();
     });
+    document.getElementById('fs-track-know').addEventListener('click', () => {
+        markCard('know');
+        updateFullscreenCard();
+        fsTrackBtns.style.display = 'none';
+    });
+    document.getElementById('fs-track-learning').addEventListener('click', () => {
+        markCard('learning');
+        updateFullscreenCard();
+        fsTrackBtns.style.display = 'none';
+    });
 
     // Keyboard in fullscreen
     overlay._keyHandler = (e) => {
         if (e.key === 'Escape') exitFullscreen();
-        if (e.key === ' ') { e.preventDefault(); fsCard.classList.toggle('flipped'); }
-        if (e.key === 'ArrowRight') { nextCard(); updateFullscreenCard(); }
-        if (e.key === 'ArrowLeft') { previousCard(); updateFullscreenCard(); }
+        if (e.key === ' ') {
+            e.preventDefault();
+            fsCard.classList.toggle('flipped');
+            if (fsCard.classList.contains('flipped') && studySettings.trackProgress) fsTrackBtns.style.display = '';
+            else fsTrackBtns.style.display = 'none';
+        }
+        if (e.key === 'ArrowRight') { nextCard(); updateFullscreenCard(); fsTrackBtns.style.display = 'none'; }
+        if (e.key === 'ArrowLeft') { previousCard(); updateFullscreenCard(); fsTrackBtns.style.display = 'none'; }
     };
     document.addEventListener('keydown', overlay._keyHandler);
 
@@ -1962,6 +2209,7 @@ function updateStudyView() {
         nextBtn.disabled = true;
         shuffleBtn.disabled = true;
         updateStarButton(null);
+        renderStudyCardList([]);
         return;
     }
 
@@ -1977,6 +2225,7 @@ function updateStudyView() {
         nextBtn.disabled = true;
         shuffleBtn.disabled = true;
         updateStarButton(null);
+        renderStudyCardList([]);
         return;
     }
 
@@ -1995,10 +2244,51 @@ function updateStudyView() {
     updateProgressTracker();
     hideTrackButtons();
     autoPlayTTS();
+    renderStudyCardList(cards);
 
     prevBtn.disabled = false;
     nextBtn.disabled = false;
     shuffleBtn.disabled = false;
+}
+
+let cardListOpen = false;
+
+function renderStudyCardList(cards) {
+    const el = document.getElementById('study-card-list');
+    if (!el) return;
+    if (!cards || cards.length === 0) { el.innerHTML = ''; return; }
+    let html = `<div class="study-card-list-header" onclick="toggleCardList()">
+        <span>All cards in deck (${cards.length})</span>
+        <span class="study-list-toggle">${cardListOpen ? '▲ Hide' : '▼ Show'}</span>
+    </div>`;
+    if (cardListOpen) {
+        html += '<div class="study-card-list-items">';
+        cards.forEach((c, i) => {
+            const isCurrent = i === appData.currentCardIndex;
+            const starClass = c.starred ? 'starred' : '';
+            html += `<div class="study-list-item${isCurrent ? ' current' : ''}" onclick="jumpToCard(${i})">
+                <span class="study-list-num">${i + 1}</span>
+                <span class="study-list-term">${c.question}</span>
+                <span class="study-list-def">${c.answer}</span>
+                <span class="study-list-star ${starClass}">${c.starred ? '★' : '☆'}</span>
+            </div>`;
+        });
+        html += '</div>';
+    }
+    el.innerHTML = html;
+}
+
+function toggleCardList() {
+    cardListOpen = !cardListOpen;
+    updateStudyView();
+}
+
+function jumpToCard(index) {
+    appData.currentCardIndex = index;
+    const el = document.getElementById('flashcard');
+    if (el) { el.style.transition = 'none'; el.classList.remove('flipped'); el.offsetHeight; el.style.transition = ''; }
+    saveData();
+    updateStudyView();
 }
 
 function renderManageView() {
@@ -2731,19 +3021,275 @@ function endSurvivalMode(completed) {
 // Export
 function exportDeck() {
     const deck = getCurrentDeck();
+    if (!deck) { alert('No deck selected!'); return; }
+    exportSingleDeck(deck);
+}
+
+function exportSingleDeck(deck) {
     if (!deck || deck.cards.length === 0) {
         alert('No cards to export!');
         return;
     }
+    const data = {
+        type: 'flashdeck-deck',
+        name: deck.name,
+        icon: deck.icon || '',
+        cover: deck.cover || '',
+        coverPos: deck.coverPos || 'center',
+        cards: deck.cards.map(c => ({
+            question: c.question,
+            answer: c.answer,
+            frontImage: c.frontImage || '',
+            backImage: c.backImage || '',
+            starred: c.starred || false
+        }))
+    };
+    downloadJSON(data, `${deck.name}.json`);
+}
 
-    const lines = deck.cards.map(c => `${c.question}    ${c.answer}`);
-    const text = lines.join('\n');
+function exportFolder(folder) {
+    const folderDecks = appData.decks.filter(d => d.folderId === folder.id);
+    if (folderDecks.length === 0) {
+        alert('No decks in this folder to export!');
+        return;
+    }
+    const data = {
+        type: 'flashdeck-folder',
+        name: folder.name,
+        icon: folder.icon || '',
+        cover: folder.cover || '',
+        coverPos: folder.coverPos || 'center',
+        decks: folderDecks.map(deck => ({
+            name: deck.name,
+            icon: deck.icon || '',
+            cover: deck.cover || '',
+            coverPos: deck.coverPos || 'center',
+            cards: deck.cards.map(c => ({
+                question: c.question,
+                answer: c.answer,
+                frontImage: c.frontImage || '',
+                backImage: c.backImage || '',
+                starred: c.starred || false
+            }))
+        }))
+    };
+    downloadJSON(data, `${folder.name}.json`);
+}
 
-    const blob = new Blob([text], { type: 'text/plain' });
+function importFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.type === 'flashdeck-folder') {
+                // Import folder with all its decks
+                const now = Date.now();
+                const folder = {
+                    id: 'folder_' + now,
+                    name: data.name || 'Imported Folder',
+                    icon: data.icon || '',
+                    cover: data.cover || '',
+                    coverPos: data.coverPos || 'center'
+                };
+                appData.folders.push(folder);
+
+                (data.decks || []).forEach((d, i) => {
+                    const deck = {
+                        id: 'deck_' + (now + i + 1),
+                        name: d.name || 'Imported Deck',
+                        folderId: folder.id,
+                        icon: d.icon || '',
+                        cover: d.cover || '',
+                        coverPos: d.coverPos || 'center',
+                        cards: (d.cards || []).map((c, j) => ({
+                            id: 'card_' + (now + i * 1000 + j),
+                            question: c.question,
+                            answer: c.answer,
+                            frontImage: c.frontImage || '',
+                            backImage: c.backImage || '',
+                            starred: c.starred || false,
+                            trackStatus: 'unseen',
+                            easeFactor: 2.5,
+                            interval: 0,
+                            repetitions: 0,
+                            nextReview: Date.now(),
+                            lastReviewed: null
+                        }))
+                    };
+                    appData.decks.push(deck);
+                });
+
+                saveData();
+                alert(`Imported folder "${folder.name}" with ${data.decks.length} deck(s).`);
+                if (currentPage === 'folders') renderFoldersPage();
+                else switchPage('folders');
+
+            } else if (data.type === 'flashdeck-deck') {
+                // Import single deck
+                const now = Date.now();
+                const deck = {
+                    id: 'deck_' + now,
+                    name: data.name || 'Imported Deck',
+                    folderId: null,
+                    icon: data.icon || '',
+                    cover: data.cover || '',
+                    coverPos: data.coverPos || 'center',
+                    cards: (data.cards || []).map((c, j) => ({
+                        id: 'card_' + (now + j),
+                        question: c.question,
+                        answer: c.answer,
+                        frontImage: c.frontImage || '',
+                        backImage: c.backImage || '',
+                        starred: c.starred || false,
+                        trackStatus: 'unseen',
+                        easeFactor: 2.5,
+                        interval: 0,
+                        repetitions: 0,
+                        nextReview: Date.now(),
+                        lastReviewed: null
+                    }))
+                };
+                appData.decks.push(deck);
+                appData.currentDeck = deck.id;
+                appData.currentCardIndex = 0;
+                saveData();
+                alert(`Imported deck "${deck.name}" with ${deck.cards.length} card(s).`);
+                updateDeckSelector();
+                renderManageView();
+                updateStudyView();
+                if (currentPage === 'decks') renderDecksPage();
+                else switchPage('decks');
+
+            } else if (data.type === 'flashdeck-backup') {
+                // Import full backup
+                const now = Date.now();
+                let deckCount = 0, cardCount = 0;
+
+                function importDeckData(d, folderId, offset) {
+                    const deck = {
+                        id: 'deck_' + (now + offset),
+                        name: d.name || 'Imported Deck',
+                        folderId: folderId,
+                        icon: d.icon || '', cover: d.cover || '', coverPos: d.coverPos || 'center',
+                        cards: (d.cards || []).map((c, j) => ({
+                            id: 'card_' + (now + offset * 1000 + j),
+                            question: c.question, answer: c.answer,
+                            frontImage: c.frontImage || '', backImage: c.backImage || '',
+                            starred: c.starred || false, trackStatus: c.trackStatus || 'unseen',
+                            easeFactor: c.easeFactor || 2.5, interval: c.interval || 0,
+                            repetitions: c.repetitions || 0, nextReview: c.nextReview || Date.now(),
+                            lastReviewed: null
+                        }))
+                    };
+                    appData.decks.push(deck);
+                    deckCount++;
+                    cardCount += deck.cards.length;
+                    return deck;
+                }
+
+                let offset = 1;
+                (data.folders || []).forEach(f => {
+                    const folder = {
+                        id: 'folder_' + (now + offset),
+                        name: f.name || 'Imported Folder',
+                        icon: f.icon || '', cover: f.cover || '', coverPos: f.coverPos || 'center'
+                    };
+                    appData.folders.push(folder);
+                    offset++;
+                    (f.decks || []).forEach(d => {
+                        importDeckData(d, folder.id, offset);
+                        offset++;
+                    });
+                });
+                (data.loosDecks || []).forEach(d => {
+                    importDeckData(d, null, offset);
+                    offset++;
+                });
+
+                saveData();
+                alert(`Imported backup: ${data.folders?.length || 0} folder(s), ${deckCount} deck(s), ${cardCount} card(s).`);
+                switchPage('folders');
+
+            } else {
+                alert('Unrecognized file format. Expected a FlashDeck export file.');
+            }
+        } catch (err) {
+            alert('Could not read file: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function exportAll() {
+    const data = {
+        type: 'flashdeck-backup',
+        exportDate: new Date().toISOString(),
+        folders: appData.folders.map(f => ({
+            name: f.name,
+            icon: f.icon || '',
+            cover: f.cover || '',
+            coverPos: f.coverPos || 'center',
+            decks: appData.decks.filter(d => d.folderId === f.id).map(d => ({
+                name: d.name,
+                icon: d.icon || '',
+                cover: d.cover || '',
+                coverPos: d.coverPos || 'center',
+                cards: d.cards.map(c => ({
+                    question: c.question, answer: c.answer,
+                    frontImage: c.frontImage || '', backImage: c.backImage || '',
+                    starred: c.starred || false,
+                    trackStatus: c.trackStatus || 'unseen',
+                    easeFactor: c.easeFactor, interval: c.interval,
+                    repetitions: c.repetitions, nextReview: c.nextReview
+                }))
+            }))
+        })),
+        loosDecks: appData.decks.filter(d => !d.folderId).map(d => ({
+            name: d.name,
+            icon: d.icon || '',
+            cover: d.cover || '',
+            coverPos: d.coverPos || 'center',
+            cards: d.cards.map(c => ({
+                question: c.question, answer: c.answer,
+                frontImage: c.frontImage || '', backImage: c.backImage || '',
+                starred: c.starred || false,
+                trackStatus: c.trackStatus || 'unseen',
+                easeFactor: c.easeFactor, interval: c.interval,
+                repetitions: c.repetitions, nextReview: c.nextReview
+            }))
+        }))
+    };
+    const totalDecks = appData.decks.length;
+    const totalCards = appData.decks.reduce((s, d) => s + d.cards.length, 0);
+    downloadJSON(data, `FlashDeck-Backup-${new Date().toISOString().slice(0,10)}.json`);
+    alert(`Exported ${appData.folders.length} folder(s), ${totalDecks} deck(s), ${totalCards} card(s).`);
+}
+
+function processImportImages(files) {
+    const preview = document.getElementById('import-images-preview');
+    const prompt = document.getElementById('import-images-prompt');
+    Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            importImageMap[file.name] = e.target.result;
+            prompt.style.display = 'none';
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;';
+            wrap.innerHTML = `<img class="img-thumb" src="${e.target.result}" alt="${file.name}"><div class="img-thumb-label">${file.name}</div>`;
+            preview.appendChild(wrap);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${deck.name}.txt`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -3071,30 +3617,25 @@ function importFlashcards() {
     const validCards = [];
 
     if (format === 'multiline' || (format === 'auto' && text.includes('\n---\n'))) {
-        // Multi-line mode: blank lines between cards, --- between front/back
         const blocks = text.split(/\n\s*\n/).filter(b => b.trim());
         blocks.forEach((block, i) => {
             const parts = block.split(/\n---\n/);
+            let front, back, img = '';
             if (parts.length >= 2) {
-                const front = parts[0].trim();
-                const back = parts.slice(1).join('\n---\n').trim();
-                if (front && back) validCards.push({ front, back });
-                else errors.push(`Block ${i + 1}: Empty front or back`);
+                front = parts[0].trim();
+                back = parts.slice(1).join('\n---\n').trim();
             } else {
-                // Try splitting on first newline
                 const nl = block.indexOf('\n');
-                if (nl > 0) {
-                    const front = block.substring(0, nl).trim();
-                    const back = block.substring(nl + 1).trim();
-                    if (front && back) validCards.push({ front, back });
-                    else errors.push(`Block ${i + 1}: Could not split front/back`);
-                } else {
-                    errors.push(`Block ${i + 1}: No separator found (use --- between front and back)`);
-                }
+                if (nl > 0) { front = block.substring(0, nl).trim(); back = block.substring(nl + 1).trim(); }
+                else { errors.push(`Block ${i + 1}: No separator found`); return; }
             }
+            // Check for img: line
+            const imgMatch = back.match(/\nimg:\s*(.+)$/i);
+            if (imgMatch) { img = imgMatch[1].trim(); back = back.replace(/\nimg:\s*.+$/i, '').trim(); }
+            if (front && back) validCards.push({ front, back, img });
+            else errors.push(`Block ${i + 1}: Empty front or back`);
         });
     } else {
-        // Single-line modes
         const lines = text.split('\n');
         let lineNumber = 0;
 
@@ -3102,31 +3643,49 @@ function importFlashcards() {
             lineNumber++;
             if (!line.trim()) continue;
 
-            let front = null, back = null;
+            let parts = null, front = null, back = null, img = '';
 
             if (format === 'tab' || (format === 'auto' && line.includes('\t'))) {
-                const parts = line.split('\t');
-                if (parts.length >= 2) { front = parts[0]; back = parts.slice(1).join('\t'); }
+                parts = line.split('\t');
             } else if (format === 'pipe' || (format === 'auto' && line.includes('|'))) {
-                const parts = line.split('|');
-                if (parts.length >= 2) { front = parts[0]; back = parts.slice(1).join('|'); }
+                parts = line.split('|');
             } else if (format === 'semicolon' || (format === 'auto' && line.includes(';'))) {
-                const parts = line.split(';');
-                if (parts.length >= 2) { front = parts[0]; back = parts.slice(1).join(';'); }
+                parts = line.split(';');
             } else if (format === '4space' || format === 'auto') {
                 const m = line.match(/^(.+?)    (.+)$/);
-                if (m) { front = m[1]; back = m[2]; }
+                if (m) parts = [m[1], m[2]];
             }
 
-            if (front !== null) {
-                front = front.trim();
-                back = back.trim();
-                if (front && back) { validCards.push({ front, back }); continue; }
+            if (parts && parts.length >= 2) {
+                front = parts[0].trim();
+                back = parts[1].trim();
+                // 3rd field = image URL
+                if (parts.length >= 3) {
+                    const maybeImg = parts[2].trim();
+                    if (maybeImg.startsWith('http') || maybeImg.startsWith('data:')) img = maybeImg;
+                    else back = parts.slice(1).join(parts.includes('\t') ? '\t' : '|').trim();
+                }
+                if (front && back) { validCards.push({ front, back, img }); continue; }
             }
 
             errors.push(`Line ${lineNumber}: Could not parse — check separator`);
         }
     }
+
+    // Match dropped images to cards by filename
+    const imageMap = importImageMap || {};
+    validCards.forEach(card => {
+        if (!card.img) {
+            const frontLower = card.front.toLowerCase().replace(/[^a-z0-9]/g, '');
+            for (const [name, dataUrl] of Object.entries(imageMap)) {
+                const nameLower = name.toLowerCase().replace(/\.[^.]+$/, '').replace(/[^a-z0-9]/g, '');
+                if (nameLower === frontLower || frontLower.includes(nameLower) || nameLower.includes(frontLower)) {
+                    card.img = dataUrl;
+                    break;
+                }
+            }
+        }
+    });
 
     importErrors.innerHTML = '';
 
@@ -3138,7 +3697,7 @@ function importFlashcards() {
 
     if (validCards.length > 0) {
         validCards.forEach(card => {
-            addCard(card.front, card.back, null);
+            addCard(card.front, card.back, card.img || '', card.img || '');
         });
 
         importErrors.innerHTML += `<div class="success-message">Successfully imported ${validCards.length} card(s)!</div>`;
@@ -3214,6 +3773,12 @@ function setupEventListeners() {
         importModal.classList.add('active');
         importInput.value = '';
         importErrors.innerHTML = '';
+        importImageMap = {};
+        document.getElementById('import-images-preview').innerHTML = '';
+        document.getElementById('import-images-toggle').checked = false;
+        document.getElementById('import-images-area').style.display = 'none';
+        const iprompt = document.getElementById('import-images-prompt');
+        if (iprompt) iprompt.style.display = '';
         importInput.focus();
         closeSidebar();
     });
@@ -3232,7 +3797,14 @@ function setupEventListeners() {
     document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
 
     // Study settings
-    document.getElementById('study-settings-btn').addEventListener('click', toggleStudySettings);
+    document.getElementById('study-settings-btn').addEventListener('click', () => {
+        // If not on study view, navigate to home first to show settings there
+        if (!studyView.classList.contains('active') && !homePage.classList.contains('active')) {
+            switchPage('home');
+        }
+        toggleStudySettings();
+        closeSidebar();
+    });
     document.getElementById('opt-track-progress').addEventListener('change', (e) => {
         studySettings.trackProgress = e.target.checked;
         saveStudySettings();
@@ -3255,21 +3827,6 @@ function setupEventListeners() {
         studySettings.frontSide = e.target.value;
         saveStudySettings();
         updateStudyView();
-    });
-    document.getElementById('opt-tts').addEventListener('change', (e) => {
-        studySettings.tts = e.target.checked;
-        saveStudySettings();
-    });
-    document.getElementById('opt-shortcuts-toggle').addEventListener('click', () => {
-        const list = document.getElementById('shortcuts-list');
-        const btn = document.getElementById('opt-shortcuts-toggle');
-        if (list.style.display === 'none') {
-            list.style.display = '';
-            btn.textContent = 'Hide';
-        } else {
-            list.style.display = 'none';
-            btn.textContent = 'View';
-        }
     });
     document.getElementById('opt-restart').addEventListener('click', () => {
         const deck = getCurrentDeck();
@@ -3396,6 +3953,10 @@ function setupEventListeners() {
     document.getElementById('cancel-move-folder-btn').addEventListener('click', () => {
         document.getElementById('move-folder-modal').classList.remove('active');
     });
+    document.getElementById('confirm-add-decks-btn').addEventListener('click', confirmAddDecks);
+    document.getElementById('cancel-add-decks-btn').addEventListener('click', () => {
+        document.getElementById('add-decks-modal').classList.remove('active');
+    });
     document.getElementById('save-cover-btn').addEventListener('click', saveCover);
     document.getElementById('remove-cover-btn').addEventListener('click', removeCover);
     document.getElementById('cancel-cover-btn').addEventListener('click', () => {
@@ -3481,6 +4042,29 @@ function setupEventListeners() {
 
     // Export
     exportBtn.addEventListener('click', exportDeck);
+    document.getElementById('export-all-btn').addEventListener('click', () => { exportAll(); closeSidebar(); });
+
+    // Import images toggle and drop zone
+    document.getElementById('import-images-toggle').addEventListener('change', (e) => {
+        document.getElementById('import-images-area').style.display = e.target.checked ? '' : 'none';
+        if (!e.target.checked) { importImageMap = {}; document.getElementById('import-images-preview').innerHTML = ''; }
+    });
+    const importImgDrop = document.getElementById('import-images-drop');
+    const importImgInput = document.getElementById('import-images-input');
+    importImgDrop.addEventListener('click', (e) => { if (!e.target.closest('.img-thumb')) importImgInput.click(); });
+    importImgInput.addEventListener('change', (e) => { processImportImages(e.target.files); });
+    importImgDrop.addEventListener('dragover', (e) => { e.preventDefault(); importImgDrop.classList.add('dragover'); });
+    importImgDrop.addEventListener('dragleave', () => importImgDrop.classList.remove('dragover'));
+    importImgDrop.addEventListener('drop', (e) => { e.preventDefault(); importImgDrop.classList.remove('dragover'); processImportImages(e.dataTransfer.files); });
+
+    document.getElementById('import-file-btn').addEventListener('click', () => {
+        document.getElementById('import-file-input').click();
+        closeSidebar();
+    });
+    document.getElementById('import-file-input').addEventListener('change', (e) => {
+        if (e.target.files[0]) importFile(e.target.files[0]);
+        e.target.value = '';
+    });
 
     // Deck search filter
     deckSearch.addEventListener('input', () => renderDecksPage());
