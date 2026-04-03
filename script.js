@@ -3600,9 +3600,22 @@ function endBlankMode() {
 
 // Import Handling
 function importFlashcards() {
-    const deck = getCurrentDeck();
+    const targetVal = document.getElementById('import-deck-target').value;
+    let deck;
+    if (targetVal === '__new__') {
+        const name = prompt('New deck name:');
+        if (!name || !name.trim()) return;
+        createDeck(name.trim());
+        deck = getCurrentDeck();
+    } else {
+        deck = appData.decks.find(d => d.id === targetVal);
+        if (deck) {
+            appData.currentDeck = deck.id;
+            saveData();
+        }
+    }
     if (!deck) {
-        importErrors.innerHTML = '<div class="error-message">Please create a deck first!</div>';
+        importErrors.innerHTML = '<div class="error-message">No deck selected.</div>';
         return;
     }
 
@@ -3765,20 +3778,14 @@ function setupEventListeners() {
 
     manageModeBtn.addEventListener('click', () => switchMode('manage'));
     importBtn.addEventListener('click', () => {
-        const deck = getCurrentDeck();
-        if (!deck) {
-            alert('Please create a deck first!');
-            return;
-        }
         importModal.classList.add('active');
         importInput.value = '';
         importErrors.innerHTML = '';
         importImageMap = {};
-        document.getElementById('import-images-preview').innerHTML = '';
-        document.getElementById('import-images-toggle').checked = false;
-        document.getElementById('import-images-area').style.display = 'none';
-        const iprompt = document.getElementById('import-images-prompt');
-        if (iprompt) iprompt.style.display = '';
+        // Populate deck target selector
+        const targetSel = document.getElementById('import-deck-target');
+        targetSel.innerHTML = '<option value="__new__">+ Create new deck</option>' +
+            appData.decks.map(d => `<option value="${d.id}"${d.id === appData.currentDeck ? ' selected' : ''}>${d.name}</option>`).join('');
         importInput.focus();
         closeSidebar();
     });
@@ -4045,18 +4052,6 @@ function setupEventListeners() {
     document.getElementById('export-all-btn').addEventListener('click', () => { exportAll(); closeSidebar(); });
 
     // Import images toggle and drop zone
-    document.getElementById('import-images-toggle').addEventListener('change', (e) => {
-        document.getElementById('import-images-area').style.display = e.target.checked ? '' : 'none';
-        if (!e.target.checked) { importImageMap = {}; document.getElementById('import-images-preview').innerHTML = ''; }
-    });
-    const importImgDrop = document.getElementById('import-images-drop');
-    const importImgInput = document.getElementById('import-images-input');
-    importImgDrop.addEventListener('click', (e) => { if (!e.target.closest('.img-thumb')) importImgInput.click(); });
-    importImgInput.addEventListener('change', (e) => { processImportImages(e.target.files); });
-    importImgDrop.addEventListener('dragover', (e) => { e.preventDefault(); importImgDrop.classList.add('dragover'); });
-    importImgDrop.addEventListener('dragleave', () => importImgDrop.classList.remove('dragover'));
-    importImgDrop.addEventListener('drop', (e) => { e.preventDefault(); importImgDrop.classList.remove('dragover'); processImportImages(e.dataTransfer.files); });
-
     document.getElementById('import-file-btn').addEventListener('click', () => {
         document.getElementById('import-file-input').click();
         closeSidebar();
