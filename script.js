@@ -13,6 +13,7 @@ let importImageMap = {};
 let reviewQueue = [];
 let currentReviewIndex = 0;
 let showingAnswer = false;
+let leitnerFilter = null;
 
 // Game state
 let matchState = { selected: [], matched: [], timer: 0, timerInterval: null };
@@ -197,7 +198,9 @@ function init() {
     renderManageView();
     updateStudyView();
     updateDueCount();
+    applyDeckColor();
     switchPage('home');
+    checkShareImport();
 }
 
 // LocalStorage Functions
@@ -238,6 +241,7 @@ function loadData() {
                 if (card.backImage === undefined) card.backImage = '';
                 if (card.starred === undefined) card.starred = false;
                 if (card.trackStatus === undefined) card.trackStatus = 'unseen'; // 'unseen', 'learning', 'know'
+                if (card.leitnerBox === undefined) card.leitnerBox = 1;
             });
         });
 
@@ -274,6 +278,7 @@ function loadData() {
             if (d.icon === undefined) d.icon = '';
             if (d.cover === undefined) d.cover = '';
             if (d.coverPos === undefined) d.coverPos = 'center';
+            if (d.color === undefined) d.color = '';
         });
         // Migrate: ensure each folder has icon, cover, coverPos
         appData.folders.forEach(f => {
@@ -385,6 +390,7 @@ function createDeck(name, folderId = null) {
         icon: '',
         cover: '',
         coverPos: 'center',
+        color: '',
         cards: []
     };
     appData.decks.push(newDeck);
@@ -404,11 +410,15 @@ function switchDeck(deckId) {
     appData.currentDeck = deckId;
     appData.currentCardIndex = 0;
     flashcard.classList.remove('flipped');
+    // Track last studied timestamp on the deck
+    const deckObj = appData.decks.find(d => d.id === deckId);
+    if (deckObj) deckObj.lastStudied = Date.now();
     saveData();
     updateDeckSelector();
     renderManageView();
     updateStudyView();
     updateDueCount();
+    applyDeckColor();
 }
 
 function updateDeckSelector(filterText) {
@@ -615,6 +625,13 @@ function showDeckContextMenu(e, deck, folderOptions) {
     iconOpt.onclick = () => { closeContextMenu(); showIconPicker(deck); };
     menu.appendChild(iconOpt);
 
+    // Color option
+    const colorOpt = document.createElement('div');
+    colorOpt.className = 'context-menu-item';
+    colorOpt.textContent = deck.color ? 'Change color' : 'Set color';
+    colorOpt.onclick = () => { closeContextMenu(); showColorPicker(deck); };
+    menu.appendChild(colorOpt);
+
     // Cover option
     const coverOpt = document.createElement('div');
     coverOpt.className = 'context-menu-item';
@@ -648,6 +665,13 @@ function showDeckContextMenu(e, deck, folderOptions) {
     };
     menu.appendChild(renameOpt);
 
+    // Share deck
+    const shareOpt = document.createElement('div');
+    shareOpt.className = 'context-menu-item';
+    shareOpt.textContent = 'Share deck';
+    shareOpt.onclick = () => { closeContextMenu(); shareDeck(deck); };
+    menu.appendChild(shareOpt);
+
     // Edit cards
     const editCardsOpt = document.createElement('div');
     editCardsOpt.className = 'context-menu-item';
@@ -673,16 +697,37 @@ function showDeckContextMenu(e, deck, folderOptions) {
         menu.appendChild(opt);
     }
 
+    // Merge option
+    const mergeOpt = document.createElement('div');
+    mergeOpt.className = 'context-menu-item';
+    mergeOpt.textContent = 'Merge with...';
+    mergeOpt.onclick = () => { closeContextMenu(); showMergePicker(deck); };
+    menu.appendChild(mergeOpt);
+
     const del = document.createElement('div');
     del.className = 'context-menu-item danger';
     del.textContent = 'Delete deck';
     del.onclick = () => {
-        if (confirm(`Delete "${deck.name}"?`)) {
-            appData.decks = appData.decks.filter(d => d.id !== deck.id);
-            if (appData.currentDeck === deck.id) {
-                appData.currentDeck = appData.decks.length > 0 ? appData.decks[0].id : null;
-                appData.currentCardIndex = 0;
-            }
+        const backup = JSON.parse(JSON.stringify(deck));
+        const prevCurrentDeck = appData.currentDeck;
+        const prevCardIndex = appData.currentCardIndex;
+        appData.decks = appData.decks.filter(d => d.id !== deck.id);
+        if (appData.currentDeck === deck.id) {
+            appData.currentDeck = appData.decks.length > 0 ? appData.decks[0].id : null;
+            appData.currentCardIndex = 0;
+        }
+        saveData();
+        updateDeckSelector();
+        renderManageView();
+        updateStudyView();
+        updateDueCount();
+        if (currentPage === 'decks') renderDecksPage();
+        if (currentPage === 'folders') renderFoldersPage();
+        if (currentPage === 'home') renderHomePage();
+        showUndoToast(`Deck "${backup.name}" deleted`, () => {
+            appData.decks.push(backup);
+            appData.currentDeck = prevCurrentDeck;
+            appData.currentCardIndex = prevCardIndex;
             saveData();
             updateDeckSelector();
             renderManageView();
@@ -690,7 +735,8 @@ function showDeckContextMenu(e, deck, folderOptions) {
             updateDueCount();
             if (currentPage === 'decks') renderDecksPage();
             if (currentPage === 'folders') renderFoldersPage();
-        }
+            if (currentPage === 'home') renderHomePage();
+        });
         closeContextMenu();
     };
     menu.appendChild(del);
@@ -749,9 +795,25 @@ function showFolderContextMenu(e, folder) {
     del.className = 'context-menu-item danger';
     del.textContent = 'Delete folder';
     del.onclick = () => {
-        if (confirm(`Delete folder "${folder.name}" and all decks inside it? This cannot be undone.`)) {
-            deleteFolder(folder.id);
-        }
+        const folderBackup = JSON.parse(JSON.stringify(folder));
+        const decksBackup = JSON.parse(JSON.stringify(appData.decks.filter(d => d.folderId === folder.id)));
+        const prevCurrentDeck = appData.currentDeck;
+        const prevCardIndex = appData.currentCardIndex;
+        deleteFolder(folder.id);
+        showUndoToast(`Folder "${folderBackup.name}" deleted`, () => {
+            appData.folders.push(folderBackup);
+            decksBackup.forEach(d => appData.decks.push(d));
+            appData.currentDeck = prevCurrentDeck;
+            appData.currentCardIndex = prevCardIndex;
+            saveData();
+            updateDeckSelector();
+            renderManageView();
+            updateStudyView();
+            updateDueCount();
+            if (currentPage === 'folders') renderFoldersPage();
+            if (currentPage === 'decks') renderDecksPage();
+            if (currentPage === 'home') renderHomePage();
+        });
         closeContextMenu();
     };
     menu.appendChild(del);
@@ -1054,9 +1116,14 @@ function updateSelectCount() {
 
 function deleteSelected(type) {
     if (selectedIds.size === 0) { alert('Nothing selected'); return; }
+    const idsToDelete = new Set(selectedIds);
+    const prevDecks = JSON.parse(JSON.stringify(appData.decks));
+    const prevFolders = JSON.parse(JSON.stringify(appData.folders));
+    const prevCurrentDeck = appData.currentDeck;
+    const prevCardIndex = appData.currentCardIndex;
+    const count = idsToDelete.size;
     if (type === 'folders') {
-        if (!confirm(`Delete ${selectedIds.size} folder(s) and all decks inside? This cannot be undone.`)) return;
-        selectedIds.forEach(id => {
+        idsToDelete.forEach(id => {
             appData.decks = appData.decks.filter(d => d.folderId !== id);
             appData.folders = appData.folders.filter(f => f.id !== id);
         });
@@ -1065,8 +1132,7 @@ function deleteSelected(type) {
             appData.currentCardIndex = 0;
         }
     } else {
-        if (!confirm(`Delete ${selectedIds.size} deck(s)?`)) return;
-        selectedIds.forEach(id => {
+        idsToDelete.forEach(id => {
             appData.decks = appData.decks.filter(d => d.id !== id);
             if (appData.currentDeck === id) {
                 appData.currentDeck = appData.decks.length > 0 ? appData.decks[0].id : null;
@@ -1078,6 +1144,21 @@ function deleteSelected(type) {
     selectedIds.clear();
     toggleSelectMode(type);
     updateDeckSelector();
+    const label = type === 'folders' ? 'folder(s)' : 'deck(s)';
+    showUndoToast(`${count} ${label} deleted`, () => {
+        appData.decks = prevDecks;
+        appData.folders = prevFolders;
+        appData.currentDeck = prevCurrentDeck;
+        appData.currentCardIndex = prevCardIndex;
+        saveData();
+        updateDeckSelector();
+        renderManageView();
+        updateStudyView();
+        updateDueCount();
+        if (currentPage === 'decks') renderDecksPage();
+        if (currentPage === 'folders') renderFoldersPage();
+        if (currentPage === 'home') renderHomePage();
+    });
 }
 
 function exportSelected(type) {
@@ -1354,6 +1435,25 @@ function renderFoldersPage() {
     foldersGrid.appendChild(addCard);
 }
 
+function sortDecksArray(decksArr) {
+    const sortEl = document.getElementById('deck-sort');
+    const sortBy = sortEl ? sortEl.value : 'name';
+    const sorted = [...decksArr];
+    sorted.sort((a, b) => {
+        switch (sortBy) {
+            case 'name': return a.name.localeCompare(b.name);
+            case 'name-desc': return b.name.localeCompare(a.name);
+            case 'created': return (parseInt((b.id||'').replace('deck_',''))||0) - (parseInt((a.id||'').replace('deck_',''))||0);
+            case 'created-asc': return (parseInt((a.id||'').replace('deck_',''))||0) - (parseInt((b.id||'').replace('deck_',''))||0);
+            case 'cards': return (b.cards?b.cards.length:0) - (a.cards?a.cards.length:0);
+            case 'cards-asc': return (a.cards?a.cards.length:0) - (b.cards?b.cards.length:0);
+            case 'studied': return (b.lastStudied||0) - (a.lastStudied||0);
+            default: return 0;
+        }
+    });
+    return sorted;
+}
+
 function renderDecksPage() {
     deckList.innerHTML = '';
     const query = (deckSearch.value || '').toLowerCase().trim();
@@ -1367,6 +1467,8 @@ function renderDecksPage() {
             ? appData.decks.filter(d => d.name.toLowerCase().includes(query))
             : appData.decks;
     }
+
+    decksToShow = sortDecksArray(decksToShow);
 
     decksToShow.forEach(d => {
         const card = document.createElement('div');
@@ -1384,7 +1486,7 @@ function renderDecksPage() {
             ${coverHTML}
             <div class="grid-card-body">
                 ${iconHTML}
-                <span class="grid-card-name">${d.name}</span>
+                <span class="grid-card-name">${d.color ? `<span class="deck-color-dot" style="background:${d.color}"></span>` : ''}${d.name}</span>
                 <span class="grid-card-meta">${d.cards.length} card${d.cards.length !== 1 ? 's' : ''}${folderName ? ' \u00b7 ' + folderName : ''}</span>
             </div>
             <button class="grid-card-edit-btn" title="Edit deck">
@@ -1557,6 +1659,7 @@ function addCard(question, answer, frontImage = '', backImage = '') {
         backImage: backImage || '',
         starred: false,
         trackStatus: 'unseen',
+        leitnerBox: 1,
         easeFactor: 2.5,
         interval: 0,
         repetitions: 0,
@@ -1599,18 +1702,30 @@ function editCard(cardId, question, answer, frontImage, backImage) {
 function deleteCard(cardId) {
     const deck = getCurrentDeck();
     if (!deck) return;
-
+    const cardBackup = JSON.parse(JSON.stringify(deck.cards.find(c => c.id === cardId)));
+    const prevIndex = appData.currentCardIndex;
+    if (!cardBackup) return;
     deck.cards = deck.cards.filter(c => c.id !== cardId);
-
     if (appData.currentCardIndex >= deck.cards.length) {
         appData.currentCardIndex = Math.max(0, deck.cards.length - 1);
     }
-
     saveData();
     updateDeckSelector();
     renderManageView();
     updateStudyView();
     updateDueCount();
+    showUndoToast('Card deleted', () => {
+        const d = getCurrentDeck();
+        if (d) {
+            d.cards.splice(prevIndex, 0, cardBackup);
+            appData.currentCardIndex = prevIndex;
+            saveData();
+            updateDeckSelector();
+            renderManageView();
+            updateStudyView();
+            updateDueCount();
+        }
+    });
 }
 
 function startEditCard(cardId) {
@@ -1978,6 +2093,9 @@ function getStudyCards() {
     if (studySettings.starredOnly) {
         cards = cards.filter(c => c.starred);
     }
+    if (leitnerFilter !== null) {
+        cards = cards.filter(c => (c.leitnerBox || 1) === leitnerFilter);
+    }
     if (studySettings.spacedRep) {
         // Sort by next review time (soonest first), then by lowest ease factor
         cards = [...cards].sort((a, b) => {
@@ -2040,6 +2158,45 @@ function updateProgressTracker() {
     document.getElementById('progress-unseen-count').textContent = unseen;
 }
 
+function updateLeitnerDisplay() {
+    const deck = getCurrentDeck();
+    const display = document.getElementById('leitner-display');
+    if (!display) return;
+    if (!deck || deck.cards.length === 0) {
+        for (let i = 1; i <= 5; i++) {
+            document.getElementById('leitner-' + i).textContent = '0';
+        }
+        return;
+    }
+    for (let i = 1; i <= 5; i++) {
+        const count = deck.cards.filter(c => (c.leitnerBox || 1) === i).length;
+        document.getElementById('leitner-' + i).textContent = count;
+    }
+    display.querySelectorAll('.leitner-box').forEach(box => {
+        const boxNum = parseInt(box.dataset.box);
+        if (leitnerFilter === boxNum) {
+            box.classList.add('active');
+        } else {
+            box.classList.remove('active');
+        }
+    });
+}
+
+// Leitner box click handler
+document.getElementById('leitner-display').addEventListener('click', function(e) {
+    const box = e.target.closest('.leitner-box');
+    if (!box) return;
+    const boxNum = parseInt(box.dataset.box);
+    if (leitnerFilter === boxNum) {
+        leitnerFilter = null;
+    } else {
+        leitnerFilter = boxNum;
+    }
+    appData.currentCardIndex = 0;
+    updateLeitnerDisplay();
+    updateStudyView();
+});
+
 function showTrackButtons() {
     if (!studySettings.trackProgress) return;
     document.getElementById('track-buttons').style.display = '';
@@ -2055,8 +2212,16 @@ function markCard(status) {
     const card = cards[appData.currentCardIndex % cards.length];
     if (card) {
         card.trackStatus = status;
+
+        // Update Leitner box
+        if (status === 'know') {
+            card.leitnerBox = Math.min(5, (card.leitnerBox || 1) + 1);
+        } else {
+            card.leitnerBox = 1;
+        }
         saveData();
         updateProgressTracker();
+        updateLeitnerDisplay();
 
         // If spaced rep is on, update ease factor
         if (studySettings.spacedRep) {
@@ -2216,7 +2381,7 @@ function updateStudyView() {
     const cards = getStudyCards();
 
     if (cards.length === 0) {
-        questionText.textContent = studySettings.starredOnly ? 'No starred cards — star some cards first' : 'No cards yet — go to Manage to add some';
+        questionText.textContent = leitnerFilter !== null ? 'No cards in Box ' + leitnerFilter : studySettings.starredOnly ? 'No starred cards — star some cards first' : 'No cards yet — go to Manage to add some';
         answerText.textContent = '';
         questionImage.innerHTML = '';
         answerImage.innerHTML = '';
@@ -2225,6 +2390,7 @@ function updateStudyView() {
         nextBtn.disabled = true;
         shuffleBtn.disabled = true;
         updateStarButton(null);
+        updateLeitnerDisplay();
         renderStudyCardList([]);
         return;
     }
@@ -2242,6 +2408,7 @@ function updateStudyView() {
     progressText.textContent = `${appData.currentCardIndex + 1} / ${cards.length}`;
     updateStarButton(currentCard);
     updateProgressTracker();
+    updateLeitnerDisplay();
     hideTrackButtons();
     autoPlayTTS();
     renderStudyCardList(cards);
@@ -2664,6 +2831,40 @@ function loadLastStudy() {
 function saveLastStudy(deckId, mode) {
     lastStudy = { deckId, mode, timestamp: Date.now() };
     localStorage.setItem('flashcardLastStudy', JSON.stringify(lastStudy));
+
+    // Also store lastStudied on the deck itself for sorting
+    const deck = appData.decks.find(d => d.id === deckId);
+    if (deck) {
+        deck.lastStudied = Date.now();
+        saveData();
+    }
+}
+
+// Undo system
+let undoState = null;
+let undoTimer = null;
+
+function showUndoToast(message, undoFn) {
+    undoState = undoFn;
+    if (undoTimer) clearTimeout(undoTimer);
+
+    const toast = document.getElementById('undo-toast');
+    document.getElementById('undo-toast-text').textContent = message;
+    toast.style.display = '';
+
+    undoTimer = setTimeout(() => {
+        toast.style.display = 'none';
+        undoState = null;
+    }, 5000);
+}
+
+function performUndo() {
+    if (undoState) {
+        undoState();
+        undoState = null;
+    }
+    if (undoTimer) clearTimeout(undoTimer);
+    document.getElementById('undo-toast').style.display = 'none';
 }
 
 
@@ -3729,6 +3930,9 @@ function importFlashcards() {
 
 // Event Listeners
 function setupEventListeners() {
+    // Undo toast
+    document.getElementById('undo-toast-btn').addEventListener('click', performUndo);
+
     // Theme Toggle
     themeToggleBtn.addEventListener('click', toggleTheme);
 
@@ -4125,6 +4329,55 @@ function setupEventListeners() {
             importErrors.innerHTML = '';
         }
     });
+}
+
+// Share deck via link
+function shareDeck(deck) {
+    const data = { n: deck.name, c: deck.cards.map(c => [c.question, c.answer]) };
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    const url = window.location.origin + window.location.pathname + '?import=' + encoded;
+    document.getElementById('share-url').value = url;
+    document.getElementById('share-status').textContent = '';
+    document.getElementById('share-modal').classList.add('active');
+}
+
+function copyShareUrl() {
+    const input = document.getElementById('share-url');
+    navigator.clipboard.writeText(input.value).then(() => {
+        document.getElementById('share-status').textContent = '\u2713 Copied to clipboard!';
+    });
+}
+
+function checkShareImport() {
+    const params = new URLSearchParams(window.location.search);
+    const importData = params.get('import');
+    if (!importData) return;
+    try {
+        const json = JSON.parse(decodeURIComponent(escape(atob(importData))));
+        const now = Date.now();
+        const deck = {
+            id: 'deck_' + now,
+            name: json.n || 'Shared Deck',
+            folderId: null, icon: '', cover: '', coverPos: 'center',
+            cards: (json.c || []).map((c, i) => ({
+                id: 'card_' + (now + i),
+                question: c[0], answer: c[1],
+                frontImage: '', backImage: '',
+                starred: false, trackStatus: 'unseen', leitnerBox: 1,
+                easeFactor: 2.5, interval: 0, repetitions: 0,
+                nextReview: Date.now(), lastReviewed: null
+            }))
+        };
+        appData.decks.push(deck);
+        appData.currentDeck = deck.id;
+        saveData();
+        window.history.replaceState({}, '', window.location.pathname);
+        alert(`Imported "${deck.name}" with ${deck.cards.length} cards!`);
+        updateDeckSelector();
+        switchPage('exercises');
+    } catch(e) {
+        console.error('Failed to import shared deck:', e);
+    }
 }
 
 // Start the app

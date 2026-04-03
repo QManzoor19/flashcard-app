@@ -137,6 +137,15 @@
                 <h1 class="page-title" id="decks-page-title">All Decks</h1>
                 <div class="page-header-actions">
                     <input type="text" id="deck-search" class="page-search" placeholder="Search decks...">
+                    <select id="deck-sort" class="page-search" style="width:auto" onchange="renderDecksPage()">
+                        <option value="name">Name A-Z</option>
+                        <option value="name-desc">Name Z-A</option>
+                        <option value="created">Newest first</option>
+                        <option value="created-asc">Oldest first</option>
+                        <option value="cards">Most cards</option>
+                        <option value="cards-asc">Fewest cards</option>
+                        <option value="studied">Recently studied</option>
+                    </select>
                     <button class="btn btn-outline btn-sm" id="select-decks-btn" onclick="toggleSelectMode('decks')">Select</button>
                     <button id="new-deck-btn" class="btn btn-primary">New Deck</button>
                 </div>
@@ -236,6 +245,13 @@
             <div id="track-buttons" class="track-buttons" style="display:none">
                 <button class="track-btn track-btn-no" id="track-still-learning">Still learning</button>
                 <button class="track-btn track-btn-yes" id="track-know">Know it</button>
+            </div>
+            <div id="leitner-display" class="leitner-display">
+                <div class="leitner-box" data-box="1"><div class="leitner-label">Box 1</div><div class="leitner-count" id="leitner-1">0</div></div>
+                <div class="leitner-box" data-box="2"><div class="leitner-label">Box 2</div><div class="leitner-count" id="leitner-2">0</div></div>
+                <div class="leitner-box" data-box="3"><div class="leitner-label">Box 3</div><div class="leitner-count" id="leitner-3">0</div></div>
+                <div class="leitner-box" data-box="4"><div class="leitner-label">Box 4</div><div class="leitner-count" id="leitner-4">0</div></div>
+                <div class="leitner-box" data-box="5"><div class="leitner-label">Box 5</div><div class="leitner-count" id="leitner-5">0</div><div class="leitner-sub">Mastered</div></div>
             </div>
             <div class="flashcard-wrapper">
                 <div class="card-container">
@@ -589,6 +605,19 @@
         </div>
     </div>
 
+    <!-- Modal: Merge Decks -->
+    <div id="merge-modal" class="modal-overlay">
+        <div class="modal">
+            <h3 id="merge-title">Merge decks</h3>
+            <p style="color:var(--text-3);font-size:13px;margin-bottom:12px">Select decks to merge into this one. Cards will be combined and duplicates skipped.</p>
+            <div id="merge-list" class="move-folder-list"></div>
+            <div class="btn-row">
+                <button id="merge-confirm-btn" class="btn btn-primary">Merge</button>
+                <button class="btn btn-outline" onclick="document.getElementById('merge-modal').classList.remove('active')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Cover Image -->
     <div id="cover-modal" class="modal-overlay">
         <div class="modal">
@@ -681,7 +710,28 @@ img: https://example.com/html.png"></textarea>
         </div>
     </div>
 
+    <div id="share-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Share Deck</h3>
+            <p style="color:var(--text-3);font-size:13px;margin-bottom:12px">Anyone with this link can import your deck.</p>
+            <div style="display:flex;gap:8px">
+                <input type="text" id="share-url" class="modal-input" readonly style="margin:0;flex:1">
+                <button class="btn btn-primary" onclick="copyShareUrl()">Copy</button>
+            </div>
+            <div id="share-status" style="font-size:12px;color:var(--success);margin-top:6px"></div>
+            <div class="btn-row" style="margin-top:12px">
+                <button class="btn btn-outline" onclick="document.getElementById('share-modal').classList.remove('active')">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
+    <script src="features.js"></script>
+    <div id="undo-toast" class="undo-toast" style="display:none">
+        <span id="undo-toast-text"></span>
+        <button class="undo-toast-btn" id="undo-toast-btn">Undo</button>
+    </div>
+
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js');
